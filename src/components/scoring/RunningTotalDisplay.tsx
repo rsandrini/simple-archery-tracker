@@ -10,23 +10,23 @@ export function RunningTotalDisplay({ runningTotal, maxTotal, totalX, endIndex, 
   const pct = maxTotal > 0 ? (runningTotal / maxTotal) * 100 : 0
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
       <div className="flex items-end justify-between mb-2">
-        <span className="text-xs text-gray-500 uppercase tracking-wide">Running total</span>
-        <span className="text-xs text-gray-400">End {endIndex + 1} / {totalEnds}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Running total</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">End {endIndex + 1} / {totalEnds}</span>
       </div>
       <div className="flex items-baseline gap-2 mb-3">
-        <span className="text-3xl font-bold text-gray-900">{runningTotal}</span>
-        <span className="text-sm text-gray-400">/ {maxTotal}</span>
+        <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">{runningTotal}</span>
+        <span className="text-sm text-gray-400 dark:text-gray-500">/ {maxTotal}</span>
       </div>
-      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+      <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mb-2">
         <div
           className="bg-blue-500 h-1.5 rounded-full transition-all"
           style={{ width: `${pct.toFixed(1)}%` }}
         />
       </div>
       {totalX > 0 && (
-        <p className="text-xs text-yellow-600 font-medium">{totalX}× X</p>
+        <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">{totalX}× X</p>
       )}
     </div>
   )

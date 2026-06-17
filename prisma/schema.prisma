@@ -12,6 +12,8 @@ model Session {
   modality      String
   targetVariant String   @default("1-SPOT")
   createdAt     DateTime @default(now())
+  notes         String?
+  rating        Int?
   ends          End[]
 }
 

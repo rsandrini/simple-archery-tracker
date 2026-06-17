@@ -19,6 +19,13 @@ export const api = {
 
     get: (id: string) =>
       fetch(`/api/sessions/${id}`).then(r => json(r)),
+
+    update: (id: string, data: { notes?: string; rating?: number | null }) =>
+      fetch(`/api/sessions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(r => json(r)),
   },
 
   arrows: {

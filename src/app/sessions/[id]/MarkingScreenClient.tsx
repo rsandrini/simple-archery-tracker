@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useTransition } from 'react'
+import { useState, useCallback, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SessionData, ArrowData, ScoreValue, EndData, ScoreInference } from '@/lib/domain/types'
 import { getConfig, getArrowDistance, getEndTargetVariant } from '@/lib/domain/rounds'
@@ -11,6 +11,7 @@ import { ArcheryTarget } from '@/components/target/ArcheryTarget'
 import { EndScoreTable } from '@/components/scoring/EndScoreTable'
 import { RunningTotalDisplay } from '@/components/scoring/RunningTotalDisplay'
 import { EndProgressBar } from '@/components/session/EndProgressBar'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 interface Props {
   session: SessionData
@@ -158,21 +159,27 @@ export function MarkingScreenClient({ session }: Props) {
     []
   )
 
-  if (isSessionComplete) {
-    router.push(`/sessions/${session.id}/summary`)
-    return null
-  }
+  useEffect(() => {
+    if (isSessionComplete) {
+      router.push(`/sessions/${session.id}/summary`)
+    }
+  }, [isSessionComplete, router, session.id])
+
+  if (isSessionComplete) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <a href="/" className="text-sm text-gray-500 hover:text-gray-700">← Sessions</a>
-        <span className="text-sm font-medium text-gray-700">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
+        <a href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">← Sessions</a>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {session.modality === 'INDOOR' ? 'Indoor Round' : 'Flint Round'}
         </span>
-        <a href={`/sessions/${session.id}/summary`} className="text-sm text-blue-600 hover:text-blue-700">
-          Summary
-        </a>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <a href={`/sessions/${session.id}/summary`} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+            Summary
+          </a>
+        </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">

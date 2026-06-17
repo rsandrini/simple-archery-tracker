@@ -37,22 +37,23 @@ export function NewSessionModal({ open, onClose }: Props) {
   return (
     <Modal open={open} onClose={onClose} title="New Training Session">
       <div className="space-y-5">
-        {/* Modality */}
         <fieldset>
-          <legend className="text-sm font-medium text-gray-700 mb-2">Modality</legend>
+          <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Modality</legend>
           <div className="grid grid-cols-2 gap-2">
             {(['INDOOR', 'FLINT'] as Modality[]).map(m => (
               <label
                 key={m}
                 className={`flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                  modality === m ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                  modality === m
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                 }`}
               >
                 <input type="radio" className="sr-only" value={m} checked={modality === m} onChange={() => setModality(m)} />
-                <span className="font-medium text-sm text-gray-800">
+                <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
                   {m === 'INDOOR' ? 'Indoor Round' : 'Flint Round'}
                 </span>
-                <span className="text-xs text-gray-400 mt-0.5">
+                <span className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                   {m === 'INDOOR' ? '12 ends · 5 arrows' : '7 ends · 4 arrows'}
                 </span>
               </label>
@@ -60,16 +61,17 @@ export function NewSessionModal({ open, onClose }: Props) {
           </div>
         </fieldset>
 
-        {/* Target variant (Indoor only) */}
         {modality === 'INDOOR' && (
           <fieldset>
-            <legend className="text-sm font-medium text-gray-700 mb-2">Target face</legend>
+            <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Target face</legend>
             <div className="grid grid-cols-2 gap-2">
               {(['1-SPOT', '5-SPOT'] as TargetVariant[]).map(v => (
                 <label
                   key={v}
                   className={`flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                    targetVariant === v ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                    targetVariant === v
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
                 >
                   <input
@@ -79,10 +81,10 @@ export function NewSessionModal({ open, onClose }: Props) {
                     checked={targetVariant === v}
                     onChange={() => setTargetVariant(v)}
                   />
-                  <span className="font-medium text-sm text-gray-800">
+                  <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
                     {v === '1-SPOT' ? '1 spot' : '5 spot'}
                   </span>
-                  <span className="text-xs text-gray-400 mt-0.5">
+                  <span className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                     {v === '1-SPOT' ? 'Single large face' : 'Quincunx layout'}
                   </span>
                 </label>
@@ -92,7 +94,7 @@ export function NewSessionModal({ open, onClose }: Props) {
         )}
 
         {modality === 'FLINT' && (
-          <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
             Flint target face is auto-selected per end: 1-spot at long distances, 4-spot at 20ft / 20yd / 10yd.
           </p>
         )}
