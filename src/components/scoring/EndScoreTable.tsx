@@ -10,13 +10,13 @@ interface Props {
 }
 
 const scoreColor: Record<ScoreValue, string> = {
-  X:   'text-yellow-700 dark:text-yellow-400 font-bold',
-  '5': 'text-yellow-600 dark:text-yellow-500 font-semibold',
-  '4': 'text-red-600 dark:text-red-400',
-  '3': 'text-red-500 dark:text-red-400',
-  '2': 'text-gray-700 dark:text-gray-300',
-  '1': 'text-gray-500 dark:text-gray-400',
-  M:   'text-gray-400 dark:text-gray-500 italic',
+  X:   'text-green-700 dark:text-green-400 font-bold',
+  '5': 'text-green-600 dark:text-green-500 font-semibold',
+  '4': 'text-lime-600 dark:text-lime-400',
+  '3': 'text-yellow-600 dark:text-yellow-400',
+  '2': 'text-orange-500 dark:text-orange-400',
+  '1': 'text-red-500 dark:text-red-400',
+  M:   'text-red-700 dark:text-red-500 italic',
 }
 
 export function EndScoreTable({ arrows, config, endIndex, isWalkUp, onScoreOverride }: Props) {

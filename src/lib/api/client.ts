@@ -53,5 +53,8 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ score }),
       }).then(r => json(r)),
+
+    delete: (id: string) =>
+      fetch(`/api/arrows/${id}`, { method: 'DELETE' }),
   },
 }

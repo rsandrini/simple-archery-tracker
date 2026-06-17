@@ -40,10 +40,16 @@ export function MarkingScreenClient({ session }: Props) {
   const [ends, setEnds] = useState<EndData[]>(session.ends)
   const [currentEndIndex, setCurrentEndIndex] = useState(initialEndIndex)
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [undoing, setUndoing] = useState(false)
   const [, startTransition] = useTransition()
 
   const currentEnd = ends.find(e => e.index === currentEndIndex)
   const currentArrows = currentEnd?.arrows ?? []
+  const prevEnd = ends.find(e => e.index === currentEndIndex - 1)
+  // Ghost arrows only make sense on Indoor — Flint changes target every end
+  const ghostArrows = session.modality === 'INDOOR' && currentArrows.length === 0
+    ? (prevEnd?.arrows ?? [])
+    : []
   const currentArrowIndex = currentArrows.length
 
   const targetVariant = getEndTargetVariant(config, currentEndIndex, session.targetVariant)
@@ -142,6 +148,24 @@ export function MarkingScreenClient({ session }: Props) {
     [currentEnd, currentArrows, currentEndIndex, config, session.id, router]
   )
 
+  const handleUndo = useCallback(async () => {
+    if (undoing) return
+    // If current end is empty, undo last arrow of previous end and go back to it
+    const targetEndIndex = currentArrows.length === 0 ? currentEndIndex - 1 : currentEndIndex
+    const targetArrows = currentArrows.length === 0 ? (prevEnd?.arrows ?? []) : currentArrows
+    if (targetArrows.length === 0) return
+    const lastArrow = [...targetArrows].sort((a, b) => b.index - a.index)[0]
+    setUndoing(true)
+    await api.arrows.delete(lastArrow.id)
+    setEnds(prev => prev.map(e =>
+      e.index === targetEndIndex
+        ? { ...e, arrows: e.arrows.filter(a => a.id !== lastArrow.id) }
+        : e
+    ))
+    if (targetEndIndex !== currentEndIndex) setCurrentEndIndex(targetEndIndex)
+    setUndoing(false)
+  }, [currentArrows, currentEndIndex, prevEnd, undoing])
+
   const handleScoreOverride = useCallback(
     async (arrowId: string, score: ScoreValue) => {
       await api.arrows.update(arrowId, score)
@@ -194,13 +218,25 @@ export function MarkingScreenClient({ session }: Props) {
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
             <ArcheryTarget
               target={target}
               arrows={currentArrows}
+              ghostArrows={ghostArrows}
               onArrowPlaced={handleArrowPlaced}
               disabled={false}
             />
+            <button
+              onClick={handleUndo}
+              disabled={undoing || (currentArrows.length === 0 && (prevEnd?.arrows ?? []).length === 0)}
+              className="w-full max-w-sm py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 14L4 9l5-5" />
+                <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+              </svg>
+              {undoing ? 'Undoing…' : 'Undo last arrow'}
+            </button>
           </div>
 
           <div className="space-y-3">

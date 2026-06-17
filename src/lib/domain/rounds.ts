@@ -14,26 +14,27 @@ export const INDOOR_CONFIG: RoundConfig = {
   })),
 }
 
+const FLINT_HALF: EndDistance[] = [
+  { endIndex: 0, distance: '25yd',    targetVariant: '1-SPOT', isWalkUp: false },
+  { endIndex: 1, distance: '20ft',    targetVariant: '4-SPOT', isWalkUp: false },
+  { endIndex: 2, distance: '30yd',    targetVariant: '1-SPOT', isWalkUp: false },
+  { endIndex: 3, distance: '15yd',    targetVariant: '4-SPOT', isWalkUp: false },
+  { endIndex: 4, distance: '20yd',    targetVariant: '1-SPOT', isWalkUp: false },
+  { endIndex: 5, distance: '10yd',    targetVariant: '4-SPOT', isWalkUp: false },
+  { endIndex: 6, distance: 'Walk-up', targetVariant: '1-SPOT', isWalkUp: true,
+    arrowDistances: ['30yd', '25yd', '20yd', '15yd'] },
+]
+
 export const FLINT_CONFIG: RoundConfig = {
   id: 'FLINT',
   name: 'Flint Round',
-  totalEnds: 7,
+  totalEnds: 14,
   arrowsPerEnd: 4,
   validScores: ['X', '5', '4', '3', 'M'],
+  // Two identical passes through the same 7-end sequence
   endDistances: [
-    { endIndex: 0, distance: '25yd', targetVariant: '1-SPOT', isWalkUp: false },
-    { endIndex: 1, distance: '20ft', targetVariant: '4-SPOT', isWalkUp: false },
-    { endIndex: 2, distance: '30yd', targetVariant: '1-SPOT', isWalkUp: false },
-    { endIndex: 3, distance: '15yd', targetVariant: '1-SPOT', isWalkUp: false },
-    { endIndex: 4, distance: '20yd', targetVariant: '4-SPOT', isWalkUp: false },
-    { endIndex: 5, distance: '10yd', targetVariant: '4-SPOT', isWalkUp: false },
-    {
-      endIndex: 6,
-      distance: 'Walk-up',
-      targetVariant: '1-SPOT',
-      isWalkUp: true,
-      arrowDistances: ['30yd', '25yd', '20yd', '15yd'],
-    },
+    ...FLINT_HALF,
+    ...FLINT_HALF.map(e => ({ ...e, endIndex: e.endIndex + 7 })),
   ],
 }
 

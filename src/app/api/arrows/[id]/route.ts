@@ -3,6 +3,15 @@ import prisma from '@/lib/db/prisma'
 import { scoreToPoints, isX } from '@/lib/domain/scoring'
 import type { ScoreValue } from '@/lib/domain/types'
 
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  await prisma.arrow.delete({ where: { id } })
+  return new NextResponse(null, { status: 204 })
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

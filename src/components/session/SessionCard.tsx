@@ -81,7 +81,7 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="font-semibold text-gray-900 dark:text-gray-100">{modalityLabel[modality] ?? modality}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{formatted}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5" suppressHydrationWarning>{formatted}</p>
             {rating != null && (
               <p className="text-xs mt-1 text-yellow-500">
                 {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
@@ -106,7 +106,7 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
       <button
         onClick={() => setConfirming(true)}
         title="Delete session"
-        className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="3 6 5 6 21 6" />

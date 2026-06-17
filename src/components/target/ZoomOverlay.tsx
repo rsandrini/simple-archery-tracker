@@ -13,9 +13,10 @@ interface Props {
   clickY: number
   target: TargetDef
   existingArrows: Array<{ x: number; y: number; score: string }>
+  liveScore?: string
 }
 
-export function ZoomOverlay({ clickX, clickY, target, existingArrows }: Props) {
+export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore }: Props) {
   const half = ZOOM_WINDOW / 2
   const vx = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickX - half))
   const vy = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickY - half))
@@ -41,6 +42,26 @@ export function ZoomOverlay({ clickX, clickY, target, existingArrows }: Props) {
           <line x1={clickX - 4} y1={clickY} x2={clickX + 4} y2={clickY} stroke="#FF4136" strokeWidth={0.6} strokeLinecap="round" />
           <line x1={clickX} y1={clickY - 4} x2={clickX} y2={clickY + 4} stroke="#FF4136" strokeWidth={0.6} strokeLinecap="round" />
           <circle cx={clickX} cy={clickY} r={1} fill="#FF4136" />
+          {liveScore && (
+            <>
+              <circle cx={clickX + 6} cy={clickY - 6} r={4} fill="#FF4136" stroke="white" strokeWidth={0.6} />
+              <text
+                x={clickX + 6}
+                y={clickY - 6}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={3.5}
+                fontWeight="bold"
+                fill="white"
+                stroke="rgba(0,0,0,0.3)"
+                strokeWidth={0.3}
+                paintOrder="stroke"
+                style={{ pointerEvents: 'none', userSelect: 'none' }}
+              >
+                {liveScore}
+              </text>
+            </>
+          )}
         </svg>
       </div>
     </div>

@@ -8,26 +8,23 @@ interface Props {
 }
 
 export function ArrowDot({ x, y, label, color = '#FF4136' }: Props) {
+  const r = label ? ARROW_DOT_RADIUS + 1.5 : ARROW_DOT_RADIUS
   return (
     <g>
-      <circle
-        cx={x}
-        cy={y}
-        r={ARROW_DOT_RADIUS}
-        fill={color}
-        stroke="white"
-        strokeWidth={0.8}
-      />
+      <circle cx={x} cy={y} r={r} fill={color} stroke="white" strokeWidth={0.8} />
       {label && (
         <text
           x={x}
-          y={y - ARROW_DOT_RADIUS - 1.5}
+          y={y}
           textAnchor="middle"
-          fontSize={4}
+          dominantBaseline="central"
+          fontSize={4.5}
+          fontWeight="bold"
           fill="white"
-          stroke="#333"
-          strokeWidth={0.3}
+          stroke="rgba(0,0,0,0.4)"
+          strokeWidth={0.4}
           paintOrder="stroke"
+          style={{ pointerEvents: 'none', userSelect: 'none' }}
         >
           {label}
         </text>
