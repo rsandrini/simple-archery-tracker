@@ -7,8 +7,19 @@ datasource db {
   provider = "sqlite"
 }
 
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
 model Session {
   id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   modality      String
   targetVariant String   @default("1-SPOT")
   createdAt     DateTime @default(now())
