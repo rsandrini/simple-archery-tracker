@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { resolveDoubleHit, scoreToPoints, isX } from '@/lib/domain/scoring'
 import type { ArrowData, ScoreValue } from '@/lib/domain/types'
+import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth-utils'
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; endId: string }> }
 ) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) return unauthorizedResponse()
+
   const { id: sessionId, endId } = await params
+
+  const owned = await prisma.session.findFirst({ where: { id: sessionId, userId }, select: { id: true } })
+  if (!owned) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
   const body = await req.json()
 
   // Verify endId belongs to sessionId
