@@ -20,6 +20,7 @@
 
 # env files
 .env*
+!.env.example
 
 # typescript
 *.tsbuildinfo
