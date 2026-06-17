@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
+import { SessionProvider } from 'next-auth/react'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/lib/context/ThemeContext'
+import UserHeader from '@/components/ui/UserHeader'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -37,7 +39,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
+        <SessionProvider>
+          <ThemeProvider>
+            <UserHeader />
+            {children}
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   )
