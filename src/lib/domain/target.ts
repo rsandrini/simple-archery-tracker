@@ -4,8 +4,8 @@ export const SVG_SIZE = 200
 export const SVG_CENTER = SVG_SIZE / 2
 export const ARROW_DOT_RADIUS = 3
 
-// Normalized ring definitions: outerRadius at full spotRadius scale
-// Indoor: full spotRadius = 84; Flint: full spotRadius = 80
+// Ring definitions — outerRadius values are in the same unit as spotRadius
+// Indoor 1-spot: base spotRadius = 84
 const INDOOR_RINGS: RingDef[] = [
   { score: 'X', outerRadius: 8,  fill: '#FFFFFF' },
   { score: '5', outerRadius: 15, fill: '#FFFFFF' },
@@ -15,6 +15,16 @@ const INDOOR_RINGS: RingDef[] = [
   { score: '1', outerRadius: 84, fill: '#2B3990' },
 ]
 
+// Indoor 5-spot: pre-normalized to spotRadius=32; scoring zones X/5/4/3 (no 1/2 rings)
+// White ring at r=21 divides the 4 and 3 zones within the blue area.
+const INDOOR_5SPOT_RINGS: RingDef[] = [
+  { score: 'X', outerRadius: 4,  fill: '#FFFFFF' },
+  { score: '5', outerRadius: 11, fill: '#FFFFFF' },
+  { score: '4', outerRadius: 21, fill: '#2B3990', strokeColor: 'white', strokeWidth: 0.6 },
+  { score: '3', outerRadius: 32, fill: '#2B3990' },
+]
+
+// Flint: base spotRadius = 80
 const FLINT_RINGS: RingDef[] = [
   { score: 'X', outerRadius: 8,  fill: '#1A1A1A' },
   { score: '5', outerRadius: 18, fill: '#FFFFFF' },
@@ -53,26 +63,41 @@ function scaleRings(rings: RingDef[], baseRadius: number, targetRadius: number):
 
 export function getTargetDef(modality: Modality, variant: TargetVariant): TargetDef {
   if (modality === 'INDOOR') {
-    const baseRadius = 84
-    const spots = variant === '5-SPOT' ? INDOOR_5_SPOTS : INDOOR_1_SPOTS
-    const spotRadius = spots[0].spotRadius
+    if (variant === '5-SPOT') {
+      return {
+        variant, modality,
+        spots: INDOOR_5_SPOTS,
+        rings: INDOOR_5SPOT_RINGS,
+        background: '#2B3990',   // blue face — outer area beyond 4-ring is the face background
+        arrowRadius: 1.5,
+      }
+    }
+    // 1-SPOT
     return {
-      variant,
-      modality,
-      spots,
-      rings: scaleRings(INDOOR_RINGS, baseRadius, spotRadius),
+      variant, modality,
+      spots: INDOOR_1_SPOTS,
+      rings: INDOOR_RINGS,
       background: '#FFFFFF',
+      arrowRadius: ARROW_DOT_RADIUS,
     }
   } else {
     const baseRadius = 80
-    const spots = variant === '4-SPOT' ? FLINT_4_SPOTS : FLINT_1_SPOTS
-    const spotRadius = spots[0].spotRadius
+    if (variant === '4-SPOT') {
+      const spots = FLINT_4_SPOTS
+      return {
+        variant, modality, spots,
+        rings: scaleRings(FLINT_RINGS, baseRadius, spots[0].spotRadius),
+        background: '#FFFFFF',
+        arrowRadius: 1.5,
+      }
+    }
+    // 1-SPOT
     return {
-      variant,
-      modality,
-      spots,
-      rings: scaleRings(FLINT_RINGS, baseRadius, spotRadius),
+      variant, modality,
+      spots: FLINT_1_SPOTS,
+      rings: FLINT_RINGS,
       background: '#FFFFFF',
+      arrowRadius: ARROW_DOT_RADIUS,
     }
   }
 }
@@ -81,11 +106,10 @@ function dist(x1: number, y1: number, x2: number, y2: number): number {
   return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 }
 
-// Line rule: if the edge of the arrow dot (center - ARROW_DOT_RADIUS from spot center)
-// falls within a ring's outerRadius, that ring's score is awarded.
-function scoreForSpot(x: number, y: number, spot: SpotDef, rings: RingDef[]): ScoreValue {
+// Line rule: arrow scores if its edge (center − arrowRadius from spot center) is within a ring.
+function scoreForSpot(x: number, y: number, spot: SpotDef, rings: RingDef[], arrowRadius: number): ScoreValue {
   const d = dist(x, y, spot.cx, spot.cy)
-  const edgeDistance = d - ARROW_DOT_RADIUS
+  const edgeDistance = d - arrowRadius
   for (const ring of rings) {
     if (edgeDistance <= ring.outerRadius) return ring.score
   }
@@ -99,23 +123,23 @@ export function inferScoreFromCoords(
   variant: TargetVariant
 ): ScoreInference {
   const target = getTargetDef(modality, variant)
+  const { rings, arrowRadius } = target
   const isSingleSpot = target.spots.length === 1
 
   if (isSingleSpot) {
     const spot = target.spots[0]
-    const score = scoreForSpot(x, y, spot, target.rings)
+    const score = scoreForSpot(x, y, spot, rings, arrowRadius)
     return { score, spotIndex: null }
   }
 
-  // Multi-spot: find the spot whose center is closest AND where the dot edge is within its outer ring
+  // Multi-spot: find the closest spot whose outer ring the arrow edge touches
   let bestSpot: SpotDef | null = null
   let bestDist = Infinity
 
   for (const spot of target.spots) {
     const d = dist(x, y, spot.cx, spot.cy)
-    const outerRing = target.rings[target.rings.length - 1]
-    const edgeDistance = d - ARROW_DOT_RADIUS
-    if (edgeDistance <= outerRing.outerRadius && d < bestDist) {
+    const outerRing = rings[rings.length - 1]
+    if (d - arrowRadius <= outerRing.outerRadius && d < bestDist) {
       bestDist = d
       bestSpot = spot
     }
@@ -123,6 +147,6 @@ export function inferScoreFromCoords(
 
   if (!bestSpot) return { score: 'M', spotIndex: null }
 
-  const score = scoreForSpot(x, y, bestSpot, target.rings)
+  const score = scoreForSpot(x, y, bestSpot, rings, arrowRadius)
   return { score, spotIndex: bestSpot.index }
 }

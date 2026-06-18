@@ -10,10 +10,15 @@ export function TargetRings({ spot, rings, background }: Props) {
   const { cx, cy, spotRadius } = spot
   const sorted = [...rings].sort((a, b) => b.outerRadius - a.outerRadius)
 
+  const xRing = rings.find(r => r.score === 'X')
+  const xRadius = xRing?.outerRadius ?? 8
+  const fontSize = Math.max(2, xRadius * 0.65)
+  const textFill = xRing?.fill === '#FFFFFF' ? '#333' : '#FFFFFF'
+
   return (
     <g>
-      {/* Background circle */}
-      <circle cx={cx} cy={cy} r={spotRadius} fill={background} stroke="#ccc" strokeWidth={0.5} />
+      {/* Background circle — white stroke for dark backgrounds so the outer ring is visible */}
+      <circle cx={cx} cy={cy} r={spotRadius} fill={background} stroke={background === '#FFFFFF' ? '#ccc' : 'white'} strokeWidth={0.5} />
       {/* Rings: outermost first so inner rings paint on top */}
       {sorted.map((ring, i) => (
         <circle
@@ -26,13 +31,25 @@ export function TargetRings({ spot, rings, background }: Props) {
           strokeWidth={0.4}
         />
       ))}
-      {/* X marker on center */}
+      {/* White border overlays drawn after all fills — ensures full visibility against blue */}
+      {sorted.filter(r => r.strokeColor === 'white').map((ring, i) => (
+        <circle
+          key={`border-${i}`}
+          cx={cx}
+          cy={cy}
+          r={ring.outerRadius}
+          fill="none"
+          stroke="white"
+          strokeWidth={ring.strokeWidth ?? 0.5}
+        />
+      ))}
+      {/* X marker scaled to the X ring */}
       <text
         x={cx}
-        y={cy + 2.5}
+        y={cy + fontSize * 0.4}
         textAnchor="middle"
-        fontSize={5}
-        fill={sorted[sorted.length - 1]?.fill === '#FFFFFF' ? '#333' : '#FFFFFF'}
+        fontSize={fontSize}
+        fill={textFill}
         fontWeight="bold"
         style={{ userSelect: 'none' }}
       >

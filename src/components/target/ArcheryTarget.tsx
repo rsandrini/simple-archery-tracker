@@ -125,7 +125,7 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
         {ghostArrows.length > 0 && (
           <g opacity={0.28}>
             {ghostArrows.map(arrow => (
-              <ArrowDot key={arrow.id} x={arrow.x} y={arrow.y} color="#6b7280" />
+              <ArrowDot key={arrow.id} x={arrow.x} y={arrow.y} color="#6b7280" dotRadius={target.arrowRadius} />
             ))}
           </g>
         )}
@@ -136,6 +136,7 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
             y={arrow.y}
             color={dotColors[i % dotColors.length]}
             label={arrow.score}
+            dotRadius={target.arrowRadius}
           />
         ))}
         {dragPoint && (

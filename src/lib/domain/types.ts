@@ -13,6 +13,8 @@ export interface RingDef {
   score: ScoreValue
   outerRadius: number
   fill: string
+  strokeColor?: string
+  strokeWidth?: number
 }
 
 export interface TargetDef {
@@ -21,6 +23,7 @@ export interface TargetDef {
   spots: SpotDef[]
   rings: RingDef[]
   background: string
+  arrowRadius: number
 }
 
 export interface EndDistance {

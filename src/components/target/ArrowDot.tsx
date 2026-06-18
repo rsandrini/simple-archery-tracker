@@ -5,10 +5,11 @@ interface Props {
   y: number
   label?: string
   color?: string
+  dotRadius?: number
 }
 
-export function ArrowDot({ x, y, label, color = '#FF4136' }: Props) {
-  const r = label ? ARROW_DOT_RADIUS + 1.5 : ARROW_DOT_RADIUS
+export function ArrowDot({ x, y, label, color = '#FF4136', dotRadius = ARROW_DOT_RADIUS }: Props) {
+  const r = label ? dotRadius + 1.5 : dotRadius
   return (
     <g>
       <circle cx={x} cy={y} r={r} fill={color} stroke="white" strokeWidth={0.8} />

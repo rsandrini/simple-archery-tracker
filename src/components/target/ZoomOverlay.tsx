@@ -1,7 +1,7 @@
 'use client'
 
 import type { TargetDef } from '@/lib/domain/types'
-import { SVG_SIZE, ARROW_DOT_RADIUS } from '@/lib/domain/target'
+import { SVG_SIZE } from '@/lib/domain/target'
 import { TargetRings } from './TargetRings'
 import { ArrowDot } from './ArrowDot'
 
@@ -39,11 +39,11 @@ export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore,
           {existingArrows.map((a, i) => (
             <ArrowDot key={i} x={a.x} y={a.y} />
           ))}
-          {/* Crosshair at held position — lines render behind the sphere */}
-          <line x1={clickX - 7} y1={clickY} x2={clickX + 7} y2={clickY} stroke={color} strokeWidth={0.6} strokeLinecap="round" />
-          <line x1={clickX} y1={clickY - 7} x2={clickX} y2={clickY + 7} stroke={color} strokeWidth={0.6} strokeLinecap="round" />
-          {/* Arrow sphere — same size and style as placed arrows */}
-          <circle cx={clickX} cy={clickY} r={ARROW_DOT_RADIUS} fill={color} stroke="white" strokeWidth={0.8} />
+          {/* Crosshair — yellow stays visible on any target colour */}
+          <line x1={clickX - 4} y1={clickY} x2={clickX + 4} y2={clickY} stroke="#FACC15" strokeWidth={0.5} strokeLinecap="round" />
+          <line x1={clickX} y1={clickY - 4} x2={clickX} y2={clickY + 4} stroke="#FACC15" strokeWidth={0.5} strokeLinecap="round" />
+          {/* Arrow sphere — no border */}
+          <circle cx={clickX} cy={clickY} r={target.arrowRadius} fill={color} />
           {liveScore && (
             <text
               x={clickX + 6}

@@ -3,10 +3,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { EndScoreTable } from '@/components/scoring/EndScoreTable'
 import { TargetRings } from '@/components/target/TargetRings'
 import { ArrowDot } from '@/components/target/ArrowDot'
-import { sessionSummary } from '@/lib/domain/scoring'
+import { sessionSummary, sortArrowsDescending } from '@/lib/domain/scoring'
 import { getConfig } from '@/lib/domain/rounds'
 import { getTargetDef, SVG_SIZE } from '@/lib/domain/target'
 import { api } from '@/lib/api/client'
@@ -85,7 +84,7 @@ function SingleSpotView({ arrows, target, title }: { arrows: ArrowData[]; target
             <circle cx={stats.cx} cy={stats.cy} r={stats.groupRadius}
               fill="rgba(59,130,246,0.06)" stroke="#3b82f6" strokeWidth={0.6} strokeDasharray="2 1.5" />
           )}
-          {arrows.map(a => <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} />)}
+          {arrows.map(a => <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} dotRadius={target.arrowRadius} />)}
           <Crosshair x={stats.cx} y={stats.cy} arm={6} />
         </svg>
       </div>
@@ -137,7 +136,7 @@ function PerSpotView({ arrows, target, title }: { arrows: ArrowData[]; target: T
                   <circle cx={stats.cx} cy={stats.cy} r={stats.groupRadius}
                     fill="rgba(59,130,246,0.06)" stroke="#3b82f6" strokeWidth={0.4} strokeDasharray="1.5 1" />
                 )}
-                {spotArrows.map(a => <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} />)}
+                {spotArrows.map(a => <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} dotRadius={target.arrowRadius} />)}
                 <Crosshair x={stats.cx} y={stats.cy} arm={3} w={0.6} />
               </svg>
               <div className="text-center text-xs mt-1.5 space-y-0.5">
@@ -186,6 +185,117 @@ function ShotChart({ session }: { session: SessionData }) {
           title={hasBoth ? 'Multi-face target — per spot' : undefined}
         />
       )}
+    </div>
+  )
+}
+
+// ─── Unified arrow table ─────────────────────────────────────────────────────
+
+const scoreColor: Record<ScoreValue, string> = {
+  X:   'text-green-700 dark:text-green-400 font-bold',
+  '5': 'text-green-600 dark:text-green-500 font-semibold',
+  '4': 'text-lime-600 dark:text-lime-400',
+  '3': 'text-yellow-600 dark:text-yellow-400',
+  '2': 'text-orange-500 dark:text-orange-400',
+  '1': 'text-red-500 dark:text-red-400',
+  M:   'text-red-700 dark:text-red-500 italic',
+}
+
+interface TableRow {
+  arrow: ArrowData
+  endIndex: number
+  arrowNum: number
+  isFirstInEnd: boolean
+  endRowCount: number
+  dist: string
+  running: number
+}
+
+function UnifiedArrowTable({
+  session,
+  config,
+  onScoreOverride,
+}: {
+  session: SessionData
+  config: ReturnType<typeof getConfig>
+  onScoreOverride: (id: string, score: ScoreValue) => void
+}) {
+  let running = 0
+
+  const rows: TableRow[] = session.ends.flatMap(end => {
+    const isWalkUp = config.endDistances[end.index]?.isWalkUp ?? false
+    const endDist = config.endDistances[end.index]?.distance ?? ''
+    const sorted = sortArrowsDescending(end.arrows)
+    return sorted.map((arrow, j) => {
+      running += arrow.points
+      return {
+        arrow,
+        endIndex: end.index,
+        arrowNum: j + 1,
+        isFirstInEnd: j === 0,
+        endRowCount: sorted.length,
+        dist: isWalkUp
+          ? (config.endDistances[end.index]?.arrowDistances?.[arrow.index] ?? '—')
+          : endDist,
+        running,
+      }
+    })
+  })
+
+  const showDist = rows.some(r => r.dist)
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 dark:bg-gray-800/60 text-xs text-gray-500 dark:text-gray-400 uppercase">
+          <tr>
+            <th className="px-3 py-2 text-left">End</th>
+            <th className="px-3 py-2 text-center">#</th>
+            {showDist && <th className="px-3 py-2 text-left">Dist</th>}
+            <th className="px-3 py-2 text-center">Score</th>
+            <th className="px-3 py-2 text-right">Pts</th>
+            <th className="px-3 py-2 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr
+              key={row.arrow.id}
+              className={`${row.isFirstInEnd && row.endIndex > 0 ? 'border-t-2 border-gray-200 dark:border-gray-600' : 'border-t border-gray-100 dark:border-gray-700/50'} hover:bg-gray-50 dark:hover:bg-gray-700/20`}
+            >
+              <td className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500 font-medium">
+                {row.isFirstInEnd ? `E${row.endIndex + 1}` : ''}
+              </td>
+              <td className="px-3 py-2 text-center text-gray-400 dark:text-gray-500">{row.arrowNum}</td>
+              {showDist && (
+                <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{row.dist || '—'}</td>
+              )}
+              <td className="px-3 py-2 text-center">
+                <select
+                  value={row.arrow.score}
+                  onChange={e => onScoreOverride(row.arrow.id, e.target.value as ScoreValue)}
+                  className={`text-center bg-transparent border-0 outline-none cursor-pointer ${scoreColor[row.arrow.score]}`}
+                >
+                  {config.validScores.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-300 font-mono">{row.arrow.points}</td>
+              <td className="px-3 py-2 text-right font-mono font-semibold text-gray-900 dark:text-gray-100">{row.running}</td>
+            </tr>
+          ))}
+        </tbody>
+        {rows.length === 0 && (
+          <tbody>
+            <tr>
+              <td colSpan={showDist ? 6 : 5} className="px-3 py-6 text-center text-xs text-gray-400 dark:text-gray-500">
+                No arrows recorded yet.
+              </td>
+            </tr>
+          </tbody>
+        )}
+      </table>
     </div>
   )
 }
@@ -337,34 +447,14 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
           </div>
         </div>
 
-        {/* Per-end breakdown with editable scores */}
+        {/* All arrows — unified flat table */}
         <div className="space-y-3">
           <p className="text-xs text-gray-500 dark:text-gray-400 px-1">Tap any score to correct it.</p>
-          {summary.perEnd.map(end => {
-            const rawEnd = session.ends.find(e => e.index === end.endIndex)
-            const isWalkUp = config.endDistances[end.endIndex]?.isWalkUp ?? false
-            const dist = config.endDistances[end.endIndex]?.distance ?? ''
-            return (
-              <div key={end.endIndex} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">End {end.endIndex + 1}</span>
-                  <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                    {dist && <span>{dist}</span>}
-                    <span>Running: <span className="font-bold text-gray-900 dark:text-gray-100">{end.runningTotal}</span></span>
-                  </div>
-                </div>
-                {rawEnd && (
-                  <EndScoreTable
-                    arrows={rawEnd.arrows}
-                    config={config}
-                    endIndex={end.endIndex}
-                    isWalkUp={isWalkUp}
-                    onScoreOverride={handleScoreOverride}
-                  />
-                )}
-              </div>
-            )
-          })}
+          <UnifiedArrowTable
+            session={session}
+            config={config}
+            onScoreOverride={handleScoreOverride}
+          />
         </div>
       </div>
     </div>
