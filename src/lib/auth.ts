@@ -1,15 +1,14 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
-
-// NOTE: Session.user.id is augmented in src/types/next-auth.d.ts — no duplicate declare module here.
-// NOTE: prisma import is deferred to authorize() to avoid bundling Node.js modules in Edge Runtime middleware
+import { authConfig } from '@/lib/auth.config'
 
 if (!process.env.AUTH_SECRET) {
   throw new Error('AUTH_SECRET environment variable is required. Generate with: openssl rand -base64 32')
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       credentials: {
@@ -18,10 +17,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
-
-        // Lazy import prisma only when needed (server-side context)
         const prisma = (await import('@/lib/db/prisma')).default
-
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
         })
@@ -32,16 +28,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    jwt({ token, user }) {
-      if (user?.id) token.id = user.id
-      return token
-    },
-    session({ session, token }) {
-      if (token.id) session.user.id = token.id as string
-      return session
-    },
-  },
-  pages: { signIn: '/login' },
-  session: { strategy: 'jwt' },
 })

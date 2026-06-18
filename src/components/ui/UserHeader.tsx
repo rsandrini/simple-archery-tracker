@@ -1,4 +1,5 @@
 import { auth, signOut } from '@/lib/auth'
+import Link from 'next/link'
 
 export default async function UserHeader() {
   const session = await auth()
@@ -9,19 +10,28 @@ export default async function UserHeader() {
       <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-[200px]">
         {session.user.name ?? session.user.email}
       </span>
-      <form
-        action={async () => {
-          'use server'
-          await signOut({ redirectTo: '/login' })
-        }}
-      >
-        <button
-          type="submit"
-          className="text-sm text-red-600 dark:text-red-400 hover:underline min-w-[40px] min-h-[40px] flex items-center"
+      <div className="flex items-center gap-3">
+        <Link
+          href="/settings"
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 min-w-[40px] min-h-[40px] flex items-center"
+          title="Settings"
         >
-          Sign out
-        </button>
-      </form>
+          ⚙
+        </Link>
+        <form
+          action={async () => {
+            'use server'
+            await signOut({ redirectTo: '/login' })
+          }}
+        >
+          <button
+            type="submit"
+            className="text-sm text-red-600 dark:text-red-400 hover:underline min-w-[40px] min-h-[40px] flex items-center"
+          >
+            Sign out
+          </button>
+        </form>
+      </div>
     </header>
   )
 }

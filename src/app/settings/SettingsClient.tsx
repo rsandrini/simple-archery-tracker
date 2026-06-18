@@ -1,0 +1,261 @@
+'use client'
+
+import { useTheme } from '@/lib/context/ThemeContext'
+import { signOut } from 'next-auth/react'
+import { useState } from 'react'
+import Link from 'next/link'
+
+interface Props {
+  user: { email: string; name: string }
+}
+
+type Msg = { type: 'ok' | 'err'; text: string }
+
+export default function SettingsClient({ user }: Props) {
+  const { theme, toggle } = useTheme()
+
+  const [nameForm, setNameForm] = useState({ newName: user.name })
+  const [nameMsg, setNameMsg] = useState<Msg | null>(null)
+  const [nameLoading, setNameLoading] = useState(false)
+
+  const [emailForm, setEmailForm] = useState({ currentPassword: '', newEmail: '' })
+  const [emailMsg, setEmailMsg] = useState<Msg | null>(null)
+  const [emailLoading, setEmailLoading] = useState(false)
+
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [pwMsg, setPwMsg] = useState<Msg | null>(null)
+  const [pwLoading, setPwLoading] = useState(false)
+
+  async function handleNameSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setNameMsg(null)
+    setNameLoading(true)
+    try {
+      const res = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'name', newName: nameForm.newName }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setNameMsg({ type: 'ok', text: 'Name updated.' })
+      } else {
+        setNameMsg({ type: 'err', text: data.error ?? 'Failed to update name' })
+      }
+    } finally {
+      setNameLoading(false)
+    }
+  }
+
+  async function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setEmailMsg(null)
+    setEmailLoading(true)
+    try {
+      const res = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'email', currentPassword: emailForm.currentPassword, newEmail: emailForm.newEmail }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setEmailMsg({ type: 'ok', text: 'Email updated. Signing you out…' })
+        setEmailForm({ currentPassword: '', newEmail: '' })
+        setTimeout(() => signOut({ callbackUrl: '/login' }), 1500)
+      } else {
+        setEmailMsg({ type: 'err', text: data.error ?? 'Failed to update email' })
+      }
+    } finally {
+      setEmailLoading(false)
+    }
+  }
+
+  async function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setPwMsg(null)
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      setPwMsg({ type: 'err', text: 'New passwords do not match' })
+      return
+    }
+    setPwLoading(true)
+    try {
+      const res = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'password', currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPwMsg({ type: 'ok', text: 'Password updated successfully.' })
+        setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      } else {
+        setPwMsg({ type: 'err', text: data.error ?? 'Failed to update password' })
+      }
+    } finally {
+      setPwLoading(false)
+    }
+  }
+
+  const inputClass =
+    'w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
+
+  const sectionHeading =
+    'text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider'
+
+  return (
+    <main className="max-w-lg mx-auto px-4 py-8 space-y-10">
+      <div className="flex items-center gap-3">
+        <Link href="/" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-lg leading-none">
+          ←
+        </Link>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+      </div>
+
+      {/* Appearance */}
+      <section className="space-y-3">
+        <h2 className={sectionHeading}>Appearance</h2>
+        <div className="flex gap-3">
+          <button
+            onClick={() => { if (theme !== 'light') toggle() }}
+            className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+              theme === 'light'
+                ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            ☀ Light
+          </button>
+          <button
+            onClick={() => { if (theme !== 'dark') toggle() }}
+            className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+              theme === 'dark'
+                ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            ☾ Dark
+          </button>
+        </div>
+      </section>
+
+      {/* Change name */}
+      <section className="space-y-3">
+        <h2 className={sectionHeading}>Display Name</h2>
+        <form onSubmit={handleNameSubmit} className="space-y-3">
+          <input
+            type="text"
+            required
+            placeholder="Your name"
+            value={nameForm.newName}
+            onChange={e => setNameForm({ newName: e.target.value })}
+            className={inputClass}
+          />
+          {nameMsg && (
+            <p className={`text-sm ${nameMsg.type === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {nameMsg.text}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={nameLoading}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {nameLoading ? 'Updating…' : 'Update name'}
+          </button>
+        </form>
+      </section>
+
+      {/* Change email */}
+      <section className="space-y-3">
+        <h2 className={sectionHeading}>Change Email</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Current: <span className="text-gray-700 dark:text-gray-300">{user.email}</span>
+        </p>
+        <form onSubmit={handleEmailSubmit} className="space-y-3">
+          <input
+            type="email"
+            required
+            placeholder="New email address"
+            value={emailForm.newEmail}
+            onChange={e => setEmailForm(f => ({ ...f, newEmail: e.target.value }))}
+            className={inputClass}
+          />
+          <input
+            type="password"
+            required
+            placeholder="Current password to confirm"
+            value={emailForm.currentPassword}
+            onChange={e => setEmailForm(f => ({ ...f, currentPassword: e.target.value }))}
+            className={inputClass}
+          />
+          {emailMsg && (
+            <p className={`text-sm ${emailMsg.type === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {emailMsg.text}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={emailLoading}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {emailLoading ? 'Updating…' : 'Update email'}
+          </button>
+        </form>
+      </section>
+
+      {/* Change password */}
+      <section className="space-y-3">
+        <h2 className={sectionHeading}>Change Password</h2>
+        <form onSubmit={handlePasswordSubmit} className="space-y-3">
+          <input
+            type="password"
+            required
+            placeholder="Current password"
+            value={pwForm.currentPassword}
+            onChange={e => setPwForm(f => ({ ...f, currentPassword: e.target.value }))}
+            className={inputClass}
+          />
+          <input
+            type="password"
+            required
+            placeholder="New password (min. 8 characters)"
+            value={pwForm.newPassword}
+            onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
+            className={inputClass}
+          />
+          <input
+            type="password"
+            required
+            placeholder="Confirm new password"
+            value={pwForm.confirmPassword}
+            onChange={e => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
+            className={inputClass}
+          />
+          {pwMsg && (
+            <p className={`text-sm ${pwMsg.type === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {pwMsg.text}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={pwLoading}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {pwLoading ? 'Updating…' : 'Update password'}
+          </button>
+        </form>
+      </section>
+
+      {/* Account / sign out */}
+      <section className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-8">
+        <h2 className={sectionHeading}>Account</h2>
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          className="rounded-lg border border-red-300 dark:border-red-800 px-4 py-2 text-sm text-red-600 dark:text-red-400 font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+        >
+          Sign out
+        </button>
+      </section>
+    </main>
+  )
+}

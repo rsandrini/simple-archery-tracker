@@ -1,7 +1,7 @@
 'use client'
 
 import type { TargetDef } from '@/lib/domain/types'
-import { SVG_SIZE } from '@/lib/domain/target'
+import { SVG_SIZE, ARROW_DOT_RADIUS } from '@/lib/domain/target'
 import { TargetRings } from './TargetRings'
 import { ArrowDot } from './ArrowDot'
 
@@ -14,9 +14,10 @@ interface Props {
   target: TargetDef
   existingArrows: Array<{ x: number; y: number; score: string }>
   liveScore?: string
+  color?: string
 }
 
-export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore }: Props) {
+export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore, color = '#FF4136' }: Props) {
   const half = ZOOM_WINDOW / 2
   const vx = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickX - half))
   const vy = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickY - half))
@@ -38,29 +39,27 @@ export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore 
           {existingArrows.map((a, i) => (
             <ArrowDot key={i} x={a.x} y={a.y} />
           ))}
-          {/* Crosshair at held position */}
-          <line x1={clickX - 4} y1={clickY} x2={clickX + 4} y2={clickY} stroke="#FF4136" strokeWidth={0.6} strokeLinecap="round" />
-          <line x1={clickX} y1={clickY - 4} x2={clickX} y2={clickY + 4} stroke="#FF4136" strokeWidth={0.6} strokeLinecap="round" />
-          <circle cx={clickX} cy={clickY} r={1} fill="#FF4136" />
+          {/* Crosshair at held position — lines render behind the sphere */}
+          <line x1={clickX - 7} y1={clickY} x2={clickX + 7} y2={clickY} stroke={color} strokeWidth={0.6} strokeLinecap="round" />
+          <line x1={clickX} y1={clickY - 7} x2={clickX} y2={clickY + 7} stroke={color} strokeWidth={0.6} strokeLinecap="round" />
+          {/* Arrow sphere — same size and style as placed arrows */}
+          <circle cx={clickX} cy={clickY} r={ARROW_DOT_RADIUS} fill={color} stroke="white" strokeWidth={0.8} />
           {liveScore && (
-            <>
-              <circle cx={clickX + 6} cy={clickY - 6} r={4} fill="#FF4136" stroke="white" strokeWidth={0.6} />
-              <text
-                x={clickX + 6}
-                y={clickY - 6}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={3.5}
-                fontWeight="bold"
-                fill="white"
-                stroke="rgba(0,0,0,0.3)"
-                strokeWidth={0.3}
-                paintOrder="stroke"
-                style={{ pointerEvents: 'none', userSelect: 'none' }}
-              >
-                {liveScore}
-              </text>
-            </>
+            <text
+              x={clickX + 6}
+              y={clickY - 6}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={4}
+              fontWeight="bold"
+              fill="#FF4136"
+              stroke="white"
+              strokeWidth={0.5}
+              paintOrder="stroke"
+              style={{ pointerEvents: 'none', userSelect: 'none' }}
+            >
+              {liveScore}
+            </text>
           )}
         </svg>
       </div>
