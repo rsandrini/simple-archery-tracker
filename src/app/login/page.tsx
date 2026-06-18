@@ -1,15 +1,18 @@
 'use client'
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const justReset = searchParams.get('reset') === '1'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -31,6 +34,11 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
           Sign in to Quiver
         </h1>
+        {justReset && (
+          <p className="text-sm text-green-600 dark:text-green-400 text-center">
+            Password updated. You can now sign in.
+          </p>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -45,9 +53,14 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Password
+              </label>
+              <Link href="/forgot-password" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                Forgot password?
+              </Link>
+            </div>
             <input
               type="password"
               required
@@ -75,5 +88,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }

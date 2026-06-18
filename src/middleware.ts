@@ -2,7 +2,7 @@ import NextAuth from 'next-auth'
 import { authConfig } from '@/lib/auth.config'
 import { NextResponse } from 'next/server'
 
-const PUBLIC_PREFIXES = ['/login', '/register', '/api/auth', '/api/users']
+const PUBLIC_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password', '/api/auth', '/api/users']
 
 const { auth } = NextAuth(authConfig)
 
