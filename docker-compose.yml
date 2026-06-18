@@ -2,14 +2,22 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - "3000:3000"     # keep for local access; cloudflared talks to app internally
     environment:
       DATABASE_URL: "file:/app/data/prod.db"
       AUTH_SECRET: "${AUTH_SECRET}"
-      AUTH_URL: "${AUTH_URL:-http://localhost:3000}"
+      AUTH_URL: "${AUTH_URL}"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASS: "${SMTP_PASS}"
     volumes:
-      - db-data:/app/data
+      - ./data:/app/data
     restart: unless-stopped
 
-volumes:
-  db-data:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: "${CLOUDFLARE_TUNNEL_TOKEN}"
+    depends_on:
+      - app
+    restart: unless-stopped

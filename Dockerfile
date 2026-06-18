@@ -1,40 +1,47 @@
-FROM node:20-alpine AS builder
+# Stage 1: install dependencies
+FROM node:20-slim AS deps
 WORKDIR /app
-
-# Build tools needed for better-sqlite3 native addon
-RUN apk add --no-cache python3 make g++
-
-COPY package.json package-lock.json ./
+RUN apt-get update && apt-get install -y python3 make g++ openssl && rm -rf /var/lib/apt/lists/*
+COPY package*.json ./
 RUN npm ci
 
+# Stage 2: build
+FROM node:20-slim AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-RUN npm run build
+# AUTH_SECRET is required by NextAuth at build time (page data collection).
+# This dummy value is only used during the build — runtime value comes from compose env.
+ARG AUTH_SECRET=build-time-placeholder
+RUN AUTH_SECRET=$AUTH_SECRET npm run build
 
-FROM node:20-alpine AS runner
+# Stage 3: production runner
+FROM node:20-slim AS runner
 WORKDIR /app
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/package-lock.json ./
-RUN npm ci --omit=dev
-
-# Copy built app
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./
-# Prisma files
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/src/generated ./src/generated
-
-RUN chown -R nextjs:nodejs /app
-USER nextjs
-
-EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Run migrations on startup, then start the app
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+# Copy pre-built node_modules — avoids recompiling native modules, includes Prisma CLI
+COPY --from=deps /app/node_modules ./node_modules
+
+# Next.js standalone output (has its own node_modules subset — merges on top)
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+
+# Prisma: schema + migrations + plain JS config (prisma.config.ts not copied, .js takes effect)
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.docker.js ./prisma.config.js
+
+# Generated Prisma client (custom output path: src/generated/prisma)
+COPY --from=builder /app/src/generated ./src/generated
+
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+
+EXPOSE 3000
+ENTRYPOINT ["./entrypoint.sh"]
