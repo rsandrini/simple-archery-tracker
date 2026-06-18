@@ -14,8 +14,7 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-RUN apk add --no-cache python3 make g++ && \
-    addgroup --system --gid 1001 nodejs && \
+RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/package.json ./
@@ -25,10 +24,10 @@ RUN npm ci --omit=dev
 # Copy built app
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.ts ./
 # Prisma files
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/generated ./src/generated
-# Rebuild native addon for runner (same Alpine platform, so fast)
 
 RUN chown -R nextjs:nodejs /app
 USER nextjs

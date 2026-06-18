@@ -5,6 +5,10 @@ import { compare } from 'bcryptjs'
 // NOTE: Session.user.id is augmented in src/types/next-auth.d.ts — no duplicate declare module here.
 // NOTE: prisma import is deferred to authorize() to avoid bundling Node.js modules in Edge Runtime middleware
 
+if (!process.env.AUTH_SECRET) {
+  throw new Error('AUTH_SECRET environment variable is required. Generate with: openssl rand -base64 32')
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
