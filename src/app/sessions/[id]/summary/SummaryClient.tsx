@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { TargetRings } from '@/components/target/TargetRings'
 import { ArrowDot } from '@/components/target/ArrowDot'
-import { sessionSummary, sortArrowsDescending } from '@/lib/domain/scoring'
+import { sessionSummary, sortArrowsDescending, scoreToPoints, isX } from '@/lib/domain/scoring'
 import { getConfig } from '@/lib/domain/rounds'
 import { getTargetDef, SVG_SIZE } from '@/lib/domain/target'
 import { api } from '@/lib/api/client'
@@ -285,16 +285,14 @@ function UnifiedArrowTable({
               <td className="px-3 py-2 text-right font-mono font-semibold text-gray-900 dark:text-gray-100">{row.running}</td>
             </tr>
           ))}
-        </tbody>
-        {rows.length === 0 && (
-          <tbody>
+          {rows.length === 0 && (
             <tr>
               <td colSpan={showDist ? 6 : 5} className="px-3 py-6 text-center text-xs text-gray-400 dark:text-gray-500">
                 No arrows recorded yet.
               </td>
             </tr>
-          </tbody>
-        )}
+          )}
+        </tbody>
       </table>
     </div>
   )
@@ -370,7 +368,7 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
         ...e,
         arrows: e.arrows.map(a =>
           a.id === arrowId
-            ? { ...a, score, points: score === 'X' ? 5 : score === 'M' ? 0 : parseInt(score), isX: score === 'X' }
+            ? { ...a, score, points: scoreToPoints(score), isX: isX(score) }
             : a
         ),
       })),

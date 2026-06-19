@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useCallback, useTransition, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SessionData, ArrowData, ScoreValue, EndData, ScoreInference } from '@/lib/domain/types'
 import { getConfig, getArrowDistance, getEndTargetVariant } from '@/lib/domain/rounds'
 import { getTargetDef } from '@/lib/domain/target'
-import { runningTotals, endTotal } from '@/lib/domain/scoring'
+import { runningTotals, endTotal, scoreToPoints, isX } from '@/lib/domain/scoring'
 import { api } from '@/lib/api/client'
 import { ArcheryTarget } from '@/components/target/ArcheryTarget'
 import { EndScoreTable } from '@/components/scoring/EndScoreTable'
@@ -22,26 +22,22 @@ interface Toast {
   message: string
 }
 
+function findInitialEndIndex(ends: EndData[], config: ReturnType<typeof getConfig>): number {
+  const firstIncomplete = ends.findIndex(e => e.arrows.length < config.arrowsPerEnd)
+  if (firstIncomplete >= 0) return firstIncomplete
+  if (ends.length < config.totalEnds) return ends.length
+  return config.totalEnds - 1
+}
+
 export function MarkingScreenClient({ session }: Props) {
   const router = useRouter()
   const config = getConfig(session.modality)
 
-  // Find the first incomplete end
-  const firstIncompleteEnd = session.ends.findIndex(
-    e => e.arrows.length < config.arrowsPerEnd
-  )
-  const initialEndIndex =
-    firstIncompleteEnd >= 0
-      ? firstIncompleteEnd
-      : session.ends.length < config.totalEnds
-      ? session.ends.length
-      : config.totalEnds - 1
-
   const [ends, setEnds] = useState<EndData[]>(session.ends)
-  const [currentEndIndex, setCurrentEndIndex] = useState(initialEndIndex)
+  const [currentEndIndex, setCurrentEndIndex] = useState(() => findInitialEndIndex(session.ends, config))
   const [toasts, setToasts] = useState<Toast[]>([])
   const [undoing, setUndoing] = useState(false)
-  const [, startTransition] = useTransition()
+  const toastCounter = useRef(0)
 
   const currentEnd = ends.find(e => e.index === currentEndIndex)
   const currentArrows = currentEnd?.arrows ?? []
@@ -58,44 +54,42 @@ export function MarkingScreenClient({ session }: Props) {
   const distance = getArrowDistance(config, currentEndIndex, currentArrowIndex)
   const isWalkUp = endDist?.isWalkUp ?? false
 
-  // Max theoretical score
   const maxTotal = config.totalEnds * config.arrowsPerEnd * 5
-  // Running total across completed ends (all ends before current)
-  const completedEnds = ends.filter(e => e.arrows.length === config.arrowsPerEnd)
-  const totals = runningTotals(completedEnds)
-  const runningTotal = totals[totals.length - 1] ?? 0
-  const currentEndTotal = endTotal(currentArrows)
-  const totalX = ends.flatMap(e => e.arrows).filter(a => a.isX).length
+
+  const { runningTotal, currentEndTotal, totalX } = useMemo(() => {
+    const completedEnds = ends.filter(e => e.arrows.length === config.arrowsPerEnd)
+    const totals = runningTotals(completedEnds)
+    return {
+      runningTotal: totals[totals.length - 1] ?? 0,
+      currentEndTotal: endTotal(currentArrows),
+      totalX: ends.flatMap(e => e.arrows).filter(a => a.isX).length,
+    }
+  }, [ends, currentArrows, config.arrowsPerEnd])
 
   const isSessionComplete =
     ends.filter(e => e.arrows.length === config.arrowsPerEnd).length >= config.totalEnds
 
   function addToast(message: string) {
-    const id = Date.now()
+    const id = ++toastCounter.current
     setToasts(prev => [...prev, { id, message }])
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500)
   }
 
   const handleArrowPlaced = useCallback(
-    (inference: ScoreInference & { x: number; y: number }) => {
+    async (inference: ScoreInference & { x: number; y: number }) => {
       const arrowIndex = currentArrows.length
 
-      startTransition(async () => {
+      try {
         // Ensure an End record exists in DB
         let endId = currentEnd?.id
         if (!endId) {
-          const res = await fetch(`/api/sessions/${session.id}/ends`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ index: currentEndIndex }),
-          })
-          const created = await res.json() as { id: string }
+          const created = await api.ends.create(session.id, currentEndIndex)
           endId = created.id
         }
 
         const arrowDist = getArrowDistance(config, currentEndIndex, arrowIndex)
 
-        const result = await api.arrows.create(session.id, endId!, {
+        const result = await api.arrows.create(session.id, endId, {
           index: arrowIndex,
           score: inference.score,
           x: inference.x,
@@ -111,25 +105,19 @@ export function MarkingScreenClient({ session }: Props) {
         setEnds(prev => {
           const next = [...prev]
           const endIdx = next.findIndex(e => e.index === currentEndIndex)
-          const newArrow: ArrowData = {
-            ...result.arrow,
-            score: result.arrow.score as ScoreValue,
-          }
+          const newArrow: ArrowData = { ...result.arrow, score: result.arrow.score as ScoreValue }
 
           if (endIdx >= 0) {
-            // Update existing arrows (double-hit changes) + append new arrow
             let updatedArrows = next[endIdx].arrows.map(a => {
               const changed = result.updatedArrows.find(u => u.id === a.id)
-              return changed ? { ...a, score: changed.score as ScoreValue, points: changed.points, isX: changed.isX } : a
+              return changed
+                ? { ...a, score: changed.score as ScoreValue, points: changed.points, isX: changed.isX }
+                : a
             })
             updatedArrows = [...updatedArrows, newArrow]
             next[endIdx] = { ...next[endIdx], arrows: updatedArrows }
           } else {
-            next.push({
-              id: endId!,
-              index: currentEndIndex,
-              arrows: [newArrow],
-            })
+            next.push({ id: endId, index: currentEndIndex, arrows: [newArrow] })
           }
           return next
         })
@@ -137,48 +125,57 @@ export function MarkingScreenClient({ session }: Props) {
         const newArrowCount = currentArrows.length + 1
         if (newArrowCount >= config.arrowsPerEnd) {
           if (currentEndIndex + 1 >= config.totalEnds) {
-            // Session complete
             router.push(`/sessions/${session.id}/summary`)
           } else {
             setCurrentEndIndex(prev => prev + 1)
           }
         }
-      })
+      } catch {
+        addToast('Failed to save arrow — please try again')
+      }
     },
     [currentEnd, currentArrows, currentEndIndex, config, session.id, router]
   )
 
   const handleUndo = useCallback(async () => {
     if (undoing) return
-    // If current end is empty, undo last arrow of previous end and go back to it
     const targetEndIndex = currentArrows.length === 0 ? currentEndIndex - 1 : currentEndIndex
     const targetArrows = currentArrows.length === 0 ? (prevEnd?.arrows ?? []) : currentArrows
     if (targetArrows.length === 0) return
     const lastArrow = [...targetArrows].sort((a, b) => b.index - a.index)[0]
     setUndoing(true)
-    await api.arrows.delete(lastArrow.id)
-    setEnds(prev => prev.map(e =>
-      e.index === targetEndIndex
-        ? { ...e, arrows: e.arrows.filter(a => a.id !== lastArrow.id) }
-        : e
-    ))
-    if (targetEndIndex !== currentEndIndex) setCurrentEndIndex(targetEndIndex)
-    setUndoing(false)
+    try {
+      await api.arrows.delete(lastArrow.id)
+      setEnds(prev => prev.map(e =>
+        e.index === targetEndIndex
+          ? { ...e, arrows: e.arrows.filter(a => a.id !== lastArrow.id) }
+          : e
+      ))
+      if (targetEndIndex !== currentEndIndex) setCurrentEndIndex(targetEndIndex)
+    } catch {
+      addToast('Failed to undo — please try again')
+    } finally {
+      setUndoing(false)
+    }
   }, [currentArrows, currentEndIndex, prevEnd, undoing])
 
   const handleScoreOverride = useCallback(
     async (arrowId: string, score: ScoreValue) => {
-      await api.arrows.update(arrowId, score)
-      setEnds(prev =>
-        prev.map(e => ({
-          ...e,
-          arrows: e.arrows.map(a =>
-            a.id === arrowId
-              ? { ...a, score, points: score === 'X' ? 5 : score === 'M' ? 0 : parseInt(score), isX: score === 'X' }
-              : a
-          ),
-        }))
-      )
+      try {
+        await api.arrows.update(arrowId, score)
+        setEnds(prev =>
+          prev.map(e => ({
+            ...e,
+            arrows: e.arrows.map(a =>
+              a.id === arrowId
+                ? { ...a, score, points: scoreToPoints(score), isX: isX(score) }
+                : a
+            ),
+          }))
+        )
+      } catch {
+        addToast('Failed to update score — please try again')
+      }
     },
     []
   )

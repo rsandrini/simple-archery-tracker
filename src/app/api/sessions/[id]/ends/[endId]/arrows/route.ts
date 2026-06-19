@@ -3,6 +3,7 @@ import prisma from '@/lib/db/prisma'
 import { resolveDoubleHit, scoreToPoints, isX } from '@/lib/domain/scoring'
 import type { ArrowData, ScoreValue } from '@/lib/domain/types'
 import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth-utils'
+import { isValidScore } from '@/lib/api-validation'
 
 export async function POST(
   req: NextRequest,
@@ -28,13 +29,10 @@ export async function POST(
     return NextResponse.json({ error: 'End not found' }, { status: 404 })
   }
 
-  const { index, score, x, y, distance, spotIndex } = body as {
-    index: number
-    score: ScoreValue
-    x: number
-    y: number
-    distance?: string
-    spotIndex?: number | null
+  const { index, score, x, y, distance, spotIndex } = body
+
+  if (!isValidScore(score)) {
+    return NextResponse.json({ error: 'Invalid score' }, { status: 400 })
   }
 
   const newArrow: ArrowData = {

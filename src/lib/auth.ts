@@ -21,9 +21,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
         })
-        if (!user) return null
+        if (!user) {
+          console.warn('[auth] failed login: unknown email', { email: credentials.email })
+          return null
+        }
         const valid = await compare(credentials.password as string, user.passwordHash)
-        if (!valid) return null
+        if (!valid) {
+          console.warn('[auth] failed login: wrong password', { userId: user.id })
+          return null
+        }
         return { id: user.id, email: user.email, name: user.name ?? undefined }
       },
     }),

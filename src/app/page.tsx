@@ -1,8 +1,10 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import prisma from '@/lib/db/prisma'
 import { SessionCard } from '@/components/session/SessionCard'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { HomeClient } from './HomeClient'
+import { getAuthenticatedUserId } from '@/lib/auth-utils'
 
 const PAGE_SIZE = 5
 
@@ -11,18 +13,22 @@ export default async function HomePage({
 }: {
   searchParams: Promise<{ page?: string }>
 }) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) redirect('/login')
+
   const { page: pageParam } = await searchParams
   const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1)
   const skip = (page - 1) * PAGE_SIZE
 
   const [sessions, total] = await Promise.all([
     prisma.session.findMany({
+      where: { userId },
       orderBy: { createdAt: 'desc' },
       include: { _count: { select: { ends: true } } },
       take: PAGE_SIZE,
       skip,
     }),
-    prisma.session.count(),
+    prisma.session.count({ where: { userId } }),
   ])
 
   const totalPages = Math.ceil(total / PAGE_SIZE)

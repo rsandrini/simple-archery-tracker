@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -30,10 +30,12 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
   const [deleting, setDeleting] = useState(false)
   const deletingRef = useRef(false)
 
-  const date = new Date(createdAt)
-  const formatted = date.toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  })
+  const [formatted, setFormatted] = useState('')
+  useEffect(() => {
+    setFormatted(new Date(createdAt).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    }))
+  }, [createdAt])
 
   const totalEnds = modality === 'INDOOR' ? 12 : 7
   const isComplete = endCount >= totalEnds
@@ -81,7 +83,7 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="font-semibold text-gray-900 dark:text-gray-100">{modalityLabel[modality] ?? modality}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5" suppressHydrationWarning>{formatted}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{formatted}</p>
             {rating != null && (
               <p className="text-xs mt-1 text-yellow-500">
                 {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}

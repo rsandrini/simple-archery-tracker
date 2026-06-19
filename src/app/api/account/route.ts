@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { compare, hash } from 'bcryptjs'
 import prisma from '@/lib/db/prisma'
 import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth-utils'
+import { validateRegistrationInput } from '@/lib/auth-validation'
 
 export async function PATCH(req: NextRequest) {
   const userId = await getAuthenticatedUserId()
@@ -22,6 +23,7 @@ export async function PATCH(req: NextRequest) {
   if (body.type === 'name') {
     const name = body.newName?.trim() ?? ''
     if (!name) return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 })
+    if (name.length > 100) return NextResponse.json({ error: 'Name too long' }, { status: 400 })
     await prisma.user.update({ where: { id: userId }, data: { name } })
     return NextResponse.json({ success: true })
   }
@@ -38,6 +40,10 @@ export async function PATCH(req: NextRequest) {
 
   if (body.type === 'email') {
     if (!body.newEmail) return NextResponse.json({ error: 'New email is required' }, { status: 400 })
+    const emailError = validateRegistrationInput(body.newEmail, 'placeholder12')
+    if (emailError?.includes('email')) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+    }
     const existing = await prisma.user.findUnique({ where: { email: body.newEmail } })
     if (existing && existing.id !== userId) {
       return NextResponse.json({ error: 'Email already in use' }, { status: 409 })

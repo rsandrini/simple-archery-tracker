@@ -28,6 +28,15 @@ export const api = {
       }).then(r => json(r)),
   },
 
+  ends: {
+    create: (sessionId: string, index: number): Promise<{ id: string; sessionId: string; index: number }> =>
+      fetch(`/api/sessions/${sessionId}/ends`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index }),
+      }).then(r => json(r)),
+  },
+
   arrows: {
     create: (
       sessionId: string,

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { scoreToPoints, isX } from '@/lib/domain/scoring'
-import type { ScoreValue } from '@/lib/domain/types'
 import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth-utils'
+import { isValidScore } from '@/lib/api-validation'
 
 export async function DELETE(
   _req: NextRequest,
@@ -40,7 +40,11 @@ export async function PATCH(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const { score } = (await req.json()) as { score: ScoreValue }
+  const { score } = await req.json()
+
+  if (!isValidScore(score)) {
+    return NextResponse.json({ error: 'Invalid score' }, { status: 400 })
+  }
 
   const updated = await prisma.arrow.update({
     where: { id },

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth-utils'
-import type { Modality, TargetVariant } from '@/lib/domain/types'
+import { isValidModality, isValidVariant } from '@/lib/api-validation'
 
 export async function GET() {
   const userId = await getAuthenticatedUserId()
@@ -20,11 +20,13 @@ export async function POST(req: NextRequest) {
   if (!userId) return unauthorizedResponse()
 
   const body = await req.json()
-  const modality = body.modality as Modality
-  const targetVariant = (body.targetVariant as TargetVariant) ?? '1-SPOT'
+  const { modality, targetVariant = '1-SPOT' } = body
 
-  if (!['INDOOR', 'FLINT'].includes(modality)) {
+  if (!isValidModality(modality)) {
     return NextResponse.json({ error: 'Invalid modality' }, { status: 400 })
+  }
+  if (!isValidVariant(targetVariant)) {
+    return NextResponse.json({ error: 'Invalid target variant' }, { status: 400 })
   }
 
   const session = await prisma.session.create({

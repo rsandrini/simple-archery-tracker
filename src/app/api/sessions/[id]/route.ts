@@ -37,7 +37,12 @@ export async function PATCH(
 
   const body = await req.json() as { notes?: string; rating?: number | null }
   const data: { notes?: string; rating?: number | null } = {}
-  if (body.notes !== undefined) data.notes = body.notes
+  if (body.notes !== undefined) {
+    if (typeof body.notes === 'string' && body.notes.length > 2000) {
+      return NextResponse.json({ error: 'Notes too long (max 2000 characters)' }, { status: 400 })
+    }
+    data.notes = body.notes
+  }
   if (body.rating !== undefined) data.rating = body.rating
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

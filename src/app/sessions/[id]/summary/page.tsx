@@ -1,48 +1,19 @@
-import { notFound } from 'next/navigation'
-import prisma from '@/lib/db/prisma'
+import { notFound, redirect } from 'next/navigation'
+import { getAuthenticatedUserId } from '@/lib/auth-utils'
+import { getSessionForUser, toSessionData } from '@/lib/db/session-queries'
 import { SummaryClient } from './SummaryClient'
-import type { SessionData } from '@/lib/domain/types'
 
 export default async function SummaryPage({ params }: { params: Promise<{ id: string }> }) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) redirect('/login')
+
   const { id } = await params
-
-  const session = await prisma.session.findUnique({
-    where: { id },
-    include: {
-      ends: {
-        orderBy: { index: 'asc' },
-        include: { arrows: { orderBy: { index: 'asc' } } },
-      },
-    },
-  })
-
+  const session = await getSessionForUser(id, userId)
   if (!session) notFound()
-
-  const sessionData: SessionData = {
-    id: session.id,
-    modality: session.modality as SessionData['modality'],
-    targetVariant: session.targetVariant as SessionData['targetVariant'],
-    createdAt: session.createdAt.toISOString(),
-    ends: session.ends.map(e => ({
-      id: e.id,
-      index: e.index,
-      arrows: e.arrows.map(a => ({
-        id: a.id,
-        index: a.index,
-        score: a.score as SessionData['ends'][0]['arrows'][0]['score'],
-        points: a.points,
-        isX: a.isX,
-        x: a.x,
-        y: a.y,
-        distance: a.distance ?? undefined,
-        spotIndex: a.spotIndex ?? null,
-      })),
-    })),
-  }
 
   return (
     <SummaryClient
-      session={sessionData}
+      session={toSessionData(session)}
       initialNotes={session.notes ?? ''}
       initialRating={session.rating ?? null}
     />
