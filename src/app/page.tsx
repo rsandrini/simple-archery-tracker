@@ -5,6 +5,7 @@ import { SessionCard } from '@/components/session/SessionCard'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { HomeClient } from './HomeClient'
 import { getAuthenticatedUserId } from '@/lib/auth-utils'
+import { APP_VERSION } from '@/lib/version'
 
 const PAGE_SIZE = 5
 
@@ -104,6 +105,9 @@ export default async function HomePage({
           )}
         </>
       )}
+      <footer className="mt-8 text-center text-xs text-gray-300 dark:text-gray-600">
+        {APP_VERSION}
+      </footer>
     </main>
   )
 }
