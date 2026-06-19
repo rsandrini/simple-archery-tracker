@@ -13,8 +13,9 @@ import type { SessionData, ScoreValue, ArrowData, TargetDef } from '@/lib/domain
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   ReferenceLine, ResponsiveContainer, Tooltip,
+  BarChart, Bar, Cell,
 } from 'recharts'
-import { pointsPerEnd } from '@/lib/domain/analytics'
+import { pointsPerEnd, scoreDistribution } from '@/lib/domain/analytics'
 
 interface Props {
   session: SessionData
@@ -24,12 +25,13 @@ interface Props {
 
 // ─── Shot chart helpers ──────────────────────────────────────────────────────
 
+const SCORE_COLORS: Record<ScoreValue, string> = {
+  X: '#15803d', '5': '#22c55e', '4': '#84cc16',
+  '3': '#eab308', '2': '#f97316', '1': '#ef4444', M: '#dc2626',
+}
+
 function scoreToColor(score: ScoreValue): string {
-  const map: Record<ScoreValue, string> = {
-    X: '#15803d', '5': '#22c55e', '4': '#84cc16',
-    '3': '#eab308', '2': '#f97316', '1': '#ef4444', M: '#dc2626',
-  }
-  return map[score]
+  return SCORE_COLORS[score]
 }
 
 function groupStats(arrows: ArrowData[], spotCx: number, spotCy: number) {
@@ -369,6 +371,38 @@ function FatigueCurve({ session }: { session: SessionData }) {
   )
 }
 
+const SCORE_ORDER: ScoreValue[] = ['X', '5', '4', '3', '2', '1', 'M']
+
+function ScoreHistogram({ session }: { session: SessionData }) {
+  const dist = scoreDistribution(session)
+  const data = SCORE_ORDER.map(s => ({ score: s, count: dist[s], color: SCORE_COLORS[s] }))
+  const total = data.reduce((s, d) => s + d.count, 0)
+  if (total === 0) return null
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Score distribution</h3>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">{total} arrows total</p>
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+          <XAxis dataKey="score" tick={{ fontSize: 12 }} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+          <Tooltip
+            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+            formatter={(v: number) => [v, 'arrows']}
+          />
+          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.color} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
 export function SummaryClient({ session: initialSession, initialNotes, initialRating }: Props) {
   const [session, setSession] = useState(initialSession)
   const [notes, setNotes] = useState(initialNotes)
@@ -523,7 +557,10 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
           </>
         )}
         {tab === 'analytics' && (
-          <FatigueCurve session={session} />
+          <>
+            <FatigueCurve session={session} />
+            <ScoreHistogram session={session} />
+          </>
         )}
       </div>
     </div>
