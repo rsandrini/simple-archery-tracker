@@ -10,6 +10,11 @@ import { getConfig } from '@/lib/domain/rounds'
 import { getTargetDef, SVG_SIZE } from '@/lib/domain/target'
 import { api } from '@/lib/api/client'
 import type { SessionData, ScoreValue, ArrowData, TargetDef } from '@/lib/domain/types'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  ReferenceLine, ResponsiveContainer, Tooltip,
+} from 'recharts'
+import { pointsPerEnd } from '@/lib/domain/analytics'
 
 interface Props {
   session: SessionData
@@ -323,11 +328,53 @@ function StarRating({ value, onChange }: { value: number | null; onChange: (v: n
   )
 }
 
+function FatigueCurve({ session }: { session: SessionData }) {
+  const pts = pointsPerEnd(session)
+  if (pts.length === 0) return null
+  const avg = pts.reduce((s, p) => s + p, 0) / pts.length
+  const data = pts.map((p, i) => ({ end: `E${i + 1}`, pts: p }))
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Points per end</h3>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+        Avg <span className="font-medium text-gray-600 dark:text-gray-300">{avg.toFixed(1)}</span> pts
+      </p>
+      <ResponsiveContainer width="100%" height={220}>
+        <LineChart data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+          <XAxis dataKey="end" tick={{ fontSize: 11 }} tickLine={false} />
+          <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+          <Tooltip
+            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+            formatter={(v: number) => [`${v} pts`, 'Score']}
+          />
+          <ReferenceLine
+            y={avg}
+            stroke="#9ca3af"
+            strokeDasharray="4 2"
+            label={{ value: `avg`, position: 'insideTopRight', fontSize: 10, fill: '#9ca3af' }}
+          />
+          <Line
+            type="monotone"
+            dataKey="pts"
+            stroke="#3b82f6"
+            strokeWidth={2}
+            dot={{ r: 4, fill: '#3b82f6' }}
+            activeDot={{ r: 6 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
 export function SummaryClient({ session: initialSession, initialNotes, initialRating }: Props) {
   const [session, setSession] = useState(initialSession)
   const [notes, setNotes] = useState(initialNotes)
   const [rating, setRating] = useState<number | null>(initialRating)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [tab, setTab] = useState<'overview' | 'analytics'>('overview')
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const config = getConfig(session.modality)
@@ -394,66 +441,90 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
         </div>
       </header>
 
+      {/* Tab bar */}
+      <div className="sticky top-0 z-10 flex bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        {(['overview', 'analytics'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 py-3 text-sm font-medium capitalize transition-colors
+              ${tab === t
+                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                : 'text-gray-500 dark:text-gray-400'
+              }`}
+          >
+            {t === 'overview' ? 'Overview' : 'Analytics'}
+          </button>
+        ))}
+      </div>
+
       <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
-        {/* Score summary card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <div className="flex items-end justify-between mb-1">
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total score</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500">{pct}%</span>
-          </div>
-          <div className="flex items-baseline gap-2 mb-3">
-            <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">{summary.total}</span>
-            <span className="text-gray-400 dark:text-gray-500">/ {maxTotal}</span>
-          </div>
-          <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-3">
-            <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${pct}%` }} />
-          </div>
-          <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
-            <span><span className="font-semibold text-yellow-700 dark:text-yellow-400">{summary.totalX}</span> × X</span>
-            <span><span className="font-semibold text-gray-900 dark:text-gray-100">{session.ends.length}</span> ends shot</span>
-          </div>
-        </div>
+        {tab === 'overview' && (
+          <>
+            {/* Score summary card */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+              <div className="flex items-end justify-between mb-1">
+                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total score</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">{pct}%</span>
+              </div>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">{summary.total}</span>
+                <span className="text-gray-400 dark:text-gray-500">/ {maxTotal}</span>
+              </div>
+              <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-3">
+                <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <span><span className="font-semibold text-yellow-700 dark:text-yellow-400">{summary.totalX}</span> × X</span>
+                <span><span className="font-semibold text-gray-900 dark:text-gray-100">{session.ends.length}</span> ends shot</span>
+              </div>
+            </div>
 
-        {/* Shot chart */}
-        <ShotChart session={session} />
+            {/* Shot chart */}
+            <ShotChart session={session} />
 
-        {/* Rating & Notes */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Session notes</h2>
-            <span className={`text-xs transition-opacity ${
-              saveStatus === 'idle' ? 'opacity-0' : 'opacity-100'
-            } ${saveStatus === 'saved' ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
-              {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
-            </span>
-          </div>
+            {/* Rating & Notes */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Session notes</h2>
+                <span className={`text-xs transition-opacity ${
+                  saveStatus === 'idle' ? 'opacity-0' : 'opacity-100'
+                } ${saveStatus === 'saved' ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                  {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
+                </span>
+              </div>
 
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Rating</p>
-            <StarRating value={rating} onChange={handleRatingChange} />
-          </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Rating</p>
+                <StarRating value={rating} onChange={handleRatingChange} />
+              </div>
 
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Comments</p>
-            <textarea
-              value={notes}
-              onChange={handleNotesChange}
-              placeholder="How did this session go? Notes on form, equipment, conditions…"
-              rows={3}
-              className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
-            />
-          </div>
-        </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Comments</p>
+                <textarea
+                  value={notes}
+                  onChange={handleNotesChange}
+                  placeholder="How did this session go? Notes on form, equipment, conditions…"
+                  rows={3}
+                  className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
+                />
+              </div>
+            </div>
 
-        {/* All arrows — unified flat table */}
-        <div className="space-y-3">
-          <p className="text-xs text-gray-500 dark:text-gray-400 px-1">Tap any score to correct it.</p>
-          <UnifiedArrowTable
-            session={session}
-            config={config}
-            onScoreOverride={handleScoreOverride}
-          />
-        </div>
+            {/* All arrows — unified flat table */}
+            <div className="space-y-3">
+              <p className="text-xs text-gray-500 dark:text-gray-400 px-1">Tap any score to correct it.</p>
+              <UnifiedArrowTable
+                session={session}
+                config={config}
+                onScoreOverride={handleScoreOverride}
+              />
+            </div>
+          </>
+        )}
+        {tab === 'analytics' && (
+          <FatigueCurve session={session} />
+        )}
       </div>
     </div>
   )
