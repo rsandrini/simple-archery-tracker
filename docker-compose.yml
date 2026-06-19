@@ -9,6 +9,8 @@ services:
       AUTH_URL: "${AUTH_URL}"
       SMTP_USER: "${SMTP_USER}"
       SMTP_PASS: "${SMTP_PASS}"
+      SENTRY_DSN: "${SENTRY_DSN}"
+      NEXT_PUBLIC_SENTRY_DSN: "${SENTRY_DSN}"
     volumes:
       - ./data:/app/data
     restart: unless-stopped

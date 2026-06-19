@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -16,4 +17,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // TODO: replace with your Sentry org slug from sentry.io/organizations/<org>/
+  org: 'your-sentry-org-slug',
+  // TODO: replace with your Sentry project slug from sentry.io/organizations/<org>/projects/<project>/
+  project: 'your-sentry-project-slug',
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  disableLogger: true,
+  automaticVercelMonitors: false,
+})
