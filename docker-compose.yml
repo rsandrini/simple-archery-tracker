@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"     # keep for local access; cloudflared talks to app internally
+      - "3001:3000"     # host port 3001 → container port 3000; cloudflared talks to app internally
     environment:
       DATABASE_URL: "file:/app/data/prod.db"
       AUTH_SECRET: "${AUTH_SECRET}"
