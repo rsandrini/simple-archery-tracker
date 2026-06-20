@@ -86,3 +86,34 @@ export interface ScoreInference {
   score: ScoreValue
   spotIndex: number | null
 }
+
+export type DominantHand = 'right' | 'left'
+
+export type ClockSector = '12h' | '1-2h' | '3h' | '4-5h' | '6h' | '7-8h' | '9h' | '10-11h' | 'center'
+
+export interface Hint {
+  pattern: string
+  cause: string
+  observe: string
+}
+
+export interface PREntry {
+  value: number
+  sessionId: string
+  date: string
+  modality: Modality
+}
+
+export interface PersonalRecords {
+  bestScoreIndoor: PREntry | null
+  bestScoreFlint: PREntry | null
+  bestEnd: PREntry | null
+  tightestGroup: PREntry | null
+  mostX: PREntry | null
+}
+
+export interface ProgressionPoint {
+  date: string
+  value: number
+  modality: Modality
+}
