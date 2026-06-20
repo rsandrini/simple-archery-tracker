@@ -67,7 +67,7 @@ export function clockDistribution(arrows: ArrowData[]): Record<ClockSector, numb
 
 export function flagOutliers(
   arrows: ArrowData[],
-  threshold = 1.5
+  threshold = 2.0
 ): (ArrowData & { isOutlier: boolean })[] {
   if (arrows.length === 0) return []
   const cx = arrows.reduce((s, a) => s + a.x, 0) / arrows.length

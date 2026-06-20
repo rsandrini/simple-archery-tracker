@@ -197,11 +197,12 @@ describe('flagOutliers', () => {
     const arrows = makeArrows([
       { x: 100, y: 100 }, { x: 101, y: 100 },
       { x: 99, y: 100 },  { x: 100, y: 101 },
-      { x: 150, y: 150 }, // outlier
+      { x: 100, y: 99 },  // extra tight point to keep stdDev small
+      { x: 250, y: 250 }, // outlier
     ])
     const result = flagOutliers(arrows)
-    expect(result[4].isOutlier).toBe(true)
-    expect(result.slice(0, 4).every(a => !a.isOutlier)).toBe(true)
+    expect(result[5].isOutlier).toBe(true)
+    expect(result.slice(0, 5).every(a => !a.isOutlier)).toBe(true)
   })
 })
 
