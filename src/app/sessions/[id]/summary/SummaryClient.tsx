@@ -12,13 +12,17 @@ import {
   ReferenceLine, ResponsiveContainer, Tooltip,
   BarChart, Bar, Cell,
 } from 'recharts'
-import { pointsPerEnd, scoreDistribution } from '@/lib/domain/analytics'
+import { pointsPerEnd, scoreDistribution, dispersionEllipse, groupCentroid, clockDistribution, flagOutliers, suggestPatterns, endConsistency } from '@/lib/domain/analytics'
 import { ShotChart } from '@/components/analytics/ShotChart'
+import { ClockChart } from '@/components/analytics/ClockChart'
+import { PatternHints } from '@/components/analytics/PatternHints'
+import type { DominantHand } from '@/lib/domain/types'
 
 interface Props {
   session: SessionData
   initialNotes: string
   initialRating: number | null
+  dominantHand: string | null
 }
 
 // ─── Unified arrow table ─────────────────────────────────────────────────────
@@ -233,12 +237,85 @@ function ScoreHistogram({ session }: { session: SessionData }) {
   )
 }
 
-export function SummaryClient({ session: initialSession, initialNotes, initialRating }: Props) {
+function AnalyticsTab({
+  session,
+  ignoreFliers,
+  setIgnoreFliers,
+  dominantHand,
+}: {
+  session: SessionData
+  ignoreFliers: boolean
+  setIgnoreFliers: React.Dispatch<React.SetStateAction<boolean>>
+  dominantHand: string | null
+}) {
+  const allArrows = session.ends.flatMap(e => e.arrows)
+  const flagged = flagOutliers(allArrows)
+  const outlierFlags = new Map(flagged.map(a => [a.id, a.isOutlier]))
+  const outlierCount = flagged.filter(a => a.isOutlier).length
+  const activeArrows = ignoreFliers ? allArrows.filter(a => !outlierFlags.get(a.id)) : allArrows
+
+  const dispersion = dispersionEllipse(activeArrows)
+  const centroid = groupCentroid(activeArrows)
+  const clockDist = clockDistribution(activeArrows)
+  const hints = suggestPatterns(dispersion, centroid, dominantHand as DominantHand | null)
+  const consistency = endConsistency(session)
+
+  return (
+    <>
+      {/* Outlier toggle */}
+      <div className="flex items-center justify-end gap-2">
+        {outlierCount > 0 && ignoreFliers && (
+          <span className="text-xs text-gray-400 dark:text-gray-500">{outlierCount} flier{outlierCount !== 1 ? 's' : ''} excluded</span>
+        )}
+        {outlierCount > 0 && (
+          <button
+            onClick={() => setIgnoreFliers(f => !f)}
+            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+              ignoreFliers
+                ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500'
+                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            {ignoreFliers ? 'Show all arrows' : 'Ignore fliers'}
+          </button>
+        )}
+      </div>
+
+      {/* Shot chart with ellipse */}
+      <ShotChart
+        session={session}
+        outlierFlags={ignoreFliers ? new Map(allArrows.map(a => [a.id, outlierFlags.get(a.id) ?? false])) : new Map()}
+      />
+
+      {/* End consistency */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">End consistency</p>
+        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{consistency.toFixed(1)}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">pts std dev · lower = more consistent</p>
+      </div>
+
+      {/* Clock distribution */}
+      <ClockChart distribution={clockDist} />
+
+      {/* Pattern hints */}
+      <PatternHints hints={hints} dominantHand={dominantHand} />
+
+      {/* Fatigue curve */}
+      <FatigueCurve session={session} />
+
+      {/* Score distribution */}
+      <ScoreHistogram session={session} />
+    </>
+  )
+}
+
+export function SummaryClient({ session: initialSession, initialNotes, initialRating, dominantHand }: Props) {
   const [session, setSession] = useState(initialSession)
   const [notes, setNotes] = useState(initialNotes)
   const [rating, setRating] = useState<number | null>(initialRating)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [tab, setTab] = useState<'overview' | 'analytics'>('overview')
+  const [ignoreFliers, setIgnoreFliers] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const config = getConfig(session.modality)
@@ -387,10 +464,12 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
           </>
         )}
         {tab === 'analytics' && (
-          <>
-            <FatigueCurve session={session} />
-            <ScoreHistogram session={session} />
-          </>
+          <AnalyticsTab
+            session={session}
+            ignoreFliers={ignoreFliers}
+            setIgnoreFliers={setIgnoreFliers}
+            dominantHand={dominantHand}
+          />
         )}
       </div>
     </div>
