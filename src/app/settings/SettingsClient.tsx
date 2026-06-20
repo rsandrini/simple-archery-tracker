@@ -6,7 +6,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 
 interface Props {
-  user: { email: string; name: string }
+  user: { email: string; name: string; dominantHand: string | null }
 }
 
 type Msg = { type: 'ok' | 'err'; text: string }
@@ -25,6 +25,9 @@ export default function SettingsClient({ user }: Props) {
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [pwMsg, setPwMsg] = useState<Msg | null>(null)
   const [pwLoading, setPwLoading] = useState(false)
+
+  const [hand, setHand] = useState<string | null>(user.dominantHand)
+  const [handMsg, setHandMsg] = useState<Msg | null>(null)
 
   async function handleNameSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -96,6 +99,27 @@ export default function SettingsClient({ user }: Props) {
     }
   }
 
+  async function handleHandChange(value: 'right' | 'left') {
+    const next = hand === value ? null : value
+    setHand(next)
+    setHandMsg(null)
+    try {
+      const res = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'dominantHand', value: next }),
+      })
+      if (res.ok) {
+        setHandMsg({ type: 'ok', text: 'Saved.' })
+      } else {
+        const data = await res.json()
+        setHandMsg({ type: 'err', text: data.error ?? 'Failed to save' })
+      }
+    } catch {
+      setHandMsg({ type: 'err', text: 'Network error' })
+    }
+  }
+
   const inputClass =
     'w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
 
@@ -110,6 +134,34 @@ export default function SettingsClient({ user }: Props) {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
       </div>
+
+      {/* Archer Profile */}
+      <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Archer Profile</h2>
+        <div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Dominant hand</p>
+          <div className="flex gap-2">
+            {(['right', 'left'] as const).map(h => (
+              <button
+                key={h}
+                onClick={() => handleHandChange(h)}
+                className={`flex-1 py-2.5 text-sm font-medium rounded-lg border transition-colors capitalize
+                  ${hand === h
+                    ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500'
+                    : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+              >
+                {h === 'right' ? 'Right-handed' : 'Left-handed'}
+              </button>
+            ))}
+          </div>
+          {handMsg && (
+            <p className={`mt-2 text-xs ${handMsg.type === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {handMsg.text}
+            </p>
+          )}
+        </div>
+      </section>
 
       {/* Appearance */}
       <section className="space-y-3">

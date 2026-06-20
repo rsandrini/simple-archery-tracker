@@ -9,11 +9,12 @@ export async function PATCH(req: NextRequest) {
   if (!userId) return unauthorizedResponse()
 
   const body = await req.json() as {
-    type: 'email' | 'password' | 'name'
+    type: 'email' | 'password' | 'name' | 'dominantHand'
     currentPassword?: string
     newEmail?: string
     newPassword?: string
     newName?: string
+    value?: string | null
   }
 
   if (!body.type) {
@@ -25,6 +26,15 @@ export async function PATCH(req: NextRequest) {
     if (!name) return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 })
     if (name.length > 100) return NextResponse.json({ error: 'Name too long' }, { status: 400 })
     await prisma.user.update({ where: { id: userId }, data: { name } })
+    return NextResponse.json({ success: true })
+  }
+
+  if (body.type === 'dominantHand') {
+    const value = body.value ?? null
+    if (value !== null && value !== 'right' && value !== 'left') {
+      return NextResponse.json({ error: 'dominantHand must be "right", "left", or null' }, { status: 400 })
+    }
+    await prisma.user.update({ where: { id: userId }, data: { dominantHand: value } })
     return NextResponse.json({ success: true })
   }
 
