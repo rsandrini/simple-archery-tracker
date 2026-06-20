@@ -3,197 +3,22 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { TargetRings } from '@/components/target/TargetRings'
-import { ArrowDot } from '@/components/target/ArrowDot'
 import { sessionSummary, sortArrowsDescending, scoreToPoints, isX } from '@/lib/domain/scoring'
 import { getConfig } from '@/lib/domain/rounds'
-import { getTargetDef, SVG_SIZE } from '@/lib/domain/target'
 import { api } from '@/lib/api/client'
-import type { SessionData, ScoreValue, ArrowData, TargetDef } from '@/lib/domain/types'
+import type { SessionData, ScoreValue, ArrowData } from '@/lib/domain/types'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   ReferenceLine, ResponsiveContainer, Tooltip,
   BarChart, Bar, Cell,
 } from 'recharts'
 import { pointsPerEnd, scoreDistribution } from '@/lib/domain/analytics'
+import { ShotChart } from '@/components/analytics/ShotChart'
 
 interface Props {
   session: SessionData
   initialNotes: string
   initialRating: number | null
-}
-
-// ─── Shot chart helpers ──────────────────────────────────────────────────────
-
-const SCORE_COLORS: Record<ScoreValue, string> = {
-  X: '#15803d', '5': '#22c55e', '4': '#84cc16',
-  '3': '#eab308', '2': '#f97316', '1': '#ef4444', M: '#dc2626',
-}
-
-function scoreToColor(score: ScoreValue): string {
-  return SCORE_COLORS[score]
-}
-
-function groupStats(arrows: ArrowData[], spotCx: number, spotCy: number) {
-  const cx = arrows.reduce((s, a) => s + a.x, 0) / arrows.length
-  const cy = arrows.reduce((s, a) => s + a.y, 0) / arrows.length
-  const dists = arrows.map(a => Math.hypot(a.x - cx, a.y - cy))
-  const groupRadius = dists.length > 1 ? Math.max(...dists) : 0
-  const meanSpread = dists.reduce((s, d) => s + d, 0) / (dists.length || 1)
-  return { cx, cy, groupRadius, meanSpread, offset: Math.hypot(cx - spotCx, cy - spotCy) }
-}
-
-function qualityInfo(meanSpread: number, refRadius: number) {
-  const p = meanSpread / refRadius
-  if (p < 0.12) return { label: 'Tight',    cls: 'text-green-600 dark:text-green-400' }
-  if (p < 0.28) return { label: 'Good',     cls: 'text-blue-600 dark:text-blue-400' }
-  if (p < 0.50) return { label: 'Moderate', cls: 'text-yellow-600 dark:text-yellow-400' }
-  return           { label: 'Spread',    cls: 'text-red-500 dark:text-red-400' }
-}
-
-function aimDirection(cx: number, cy: number, spotCx = 100, spotCy = 100): string {
-  const dx = cx - spotCx
-  const dy = cy - spotCy  // positive = below in SVG = Low in archery
-  const t = 4
-  const v = dy < -t ? 'High' : dy > t ? 'Low' : ''
-  const h = dx < -t ? 'Left' : dx > t ? 'Right' : ''
-  return v && h ? `${v}-${h}` : v || h || 'Centered'
-}
-
-function Crosshair({ x, y, arm = 5, w = 0.8 }: { x: number; y: number; arm?: number; w?: number }) {
-  return (
-    <g>
-      {/* White halo so the + is visible over any ring colour */}
-      <line x1={x - arm} y1={y} x2={x + arm} y2={y} stroke="white" strokeWidth={w * 3} strokeLinecap="round" />
-      <line x1={x} y1={y - arm} x2={x} y2={y + arm} stroke="white" strokeWidth={w * 3} strokeLinecap="round" />
-      <line x1={x - arm} y1={y} x2={x + arm} y2={y} stroke="#111" strokeWidth={w} strokeLinecap="round" />
-      <line x1={x} y1={y - arm} x2={x} y2={y + arm} stroke="#111" strokeWidth={w} strokeLinecap="round" />
-    </g>
-  )
-}
-
-// 1-spot full-size chart
-function SingleSpotView({ arrows, target, title }: { arrows: ArrowData[]; target: TargetDef; title?: string }) {
-  const spot = target.spots[0]
-  const stats = groupStats(arrows, spot.cx, spot.cy)
-  const q = qualityInfo(stats.meanSpread, spot.spotRadius)
-  const aim = aimDirection(stats.cx, stats.cy)
-
-  return (
-    <div>
-      {title && <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{title}</p>}
-      <div className="flex justify-center mb-3">
-        <svg viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`} className="w-full max-w-xs aspect-square">
-          {target.spots.map(s => (
-            <TargetRings key={s.index} spot={s} rings={target.rings} background={target.background} />
-          ))}
-          {stats.groupRadius > 0 && (
-            <circle cx={stats.cx} cy={stats.cy} r={stats.groupRadius}
-              fill="rgba(59,130,246,0.06)" stroke="#3b82f6" strokeWidth={0.6} strokeDasharray="2 1.5" />
-          )}
-          {arrows.map(a => <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} dotRadius={target.arrowRadius} />)}
-          <Crosshair x={stats.cx} y={stats.cy} arm={6} />
-        </svg>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Avg group radius</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.meanSpread.toFixed(1)}</p>
-          <p className={`text-xs font-semibold mt-0.5 ${q.cls}`}>{q.label}</p>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Aim offset</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.offset.toFixed(1)}</p>
-          <p className="text-xs font-semibold mt-0.5 text-gray-600 dark:text-gray-400">{aim}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Per-spot mini charts (multi-spot targets)
-function PerSpotView({ arrows, target, title }: { arrows: ArrowData[]; target: TargetDef; title?: string }) {
-  const bySpot = new Map<number, ArrowData[]>()
-  for (const a of arrows) {
-    const idx = a.spotIndex ?? 0
-    if (!bySpot.has(idx)) bySpot.set(idx, [])
-    bySpot.get(idx)!.push(a)
-  }
-  const PAD = 8
-
-  return (
-    <div>
-      {title && <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{title}</p>}
-      <div className="grid grid-cols-2 gap-3">
-        {target.spots.map(spot => {
-          const spotArrows = bySpot.get(spot.index) ?? []
-          if (spotArrows.length === 0) return null
-          const r = spot.spotRadius + PAD
-          const vb = `${spot.cx - r} ${spot.cy - r} ${r * 2} ${r * 2}`
-          const stats = groupStats(spotArrows, spot.cx, spot.cy)
-          const q = qualityInfo(stats.meanSpread, spot.spotRadius)
-          const aim = aimDirection(stats.cx, stats.cy, spot.cx, spot.cy)
-
-          return (
-            <div key={spot.index} className="bg-gray-50 dark:bg-gray-900 rounded-xl p-2">
-              <p className="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">Spot {spot.index + 1}</p>
-              <svg viewBox={vb} className="w-full aspect-square">
-                <TargetRings spot={spot} rings={target.rings} background={target.background} />
-                {stats.groupRadius > 0 && (
-                  <circle cx={stats.cx} cy={stats.cy} r={stats.groupRadius}
-                    fill="rgba(59,130,246,0.06)" stroke="#3b82f6" strokeWidth={0.4} strokeDasharray="1.5 1" />
-                )}
-                {spotArrows.map(a => <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} dotRadius={target.arrowRadius} />)}
-                <Crosshair x={stats.cx} y={stats.cy} arm={3} w={0.6} />
-              </svg>
-              <div className="text-center text-xs mt-1.5 space-y-0.5">
-                <span className={`font-semibold ${q.cls}`}>{q.label}</span>
-                <span className="text-gray-400 dark:text-gray-500"> · Ø {stats.meanSpread.toFixed(1)}</span>
-                <div className="text-gray-500 dark:text-gray-400">{aim}</div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function ShotChart({ session }: { session: SessionData }) {
-  const allArrows = session.ends.flatMap(e => e.arrows)
-  if (allArrows.length === 0) return null
-
-  // Arrows with spotIndex=null were shot on a 1-spot target
-  // Arrows with spotIndex set were shot on a multi-spot target
-  const singleArrows = allArrows.filter(a => a.spotIndex == null)
-  const multiArrows  = allArrows.filter(a => a.spotIndex != null)
-
-  const singleTarget = getTargetDef(session.modality, '1-SPOT')
-  const multiVariant = session.modality === 'INDOOR' ? '5-SPOT' : '4-SPOT'
-  const multiTarget  = getTargetDef(session.modality, multiVariant)
-  const hasBoth = singleArrows.length > 0 && multiArrows.length > 0
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-5">
-      <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Shot chart</h2>
-
-      {singleArrows.length > 0 && (
-        <SingleSpotView
-          arrows={singleArrows}
-          target={singleTarget}
-          title={hasBoth ? 'Single-face target (all ends combined)' : undefined}
-        />
-      )}
-
-      {multiArrows.length > 0 && (
-        <PerSpotView
-          arrows={multiArrows}
-          target={multiTarget}
-          title={hasBoth ? 'Multi-face target — per spot' : undefined}
-        />
-      )}
-    </div>
-  )
 }
 
 // ─── Unified arrow table ─────────────────────────────────────────────────────
@@ -369,6 +194,11 @@ function FatigueCurve({ session }: { session: SessionData }) {
       </ResponsiveContainer>
     </div>
   )
+}
+
+const SCORE_COLORS: Record<ScoreValue, string> = {
+  X: '#15803d', '5': '#22c55e', '4': '#84cc16',
+  '3': '#eab308', '2': '#f97316', '1': '#ef4444', M: '#dc2626',
 }
 
 const SCORE_ORDER: ScoreValue[] = ['X', '5', '4', '3', '2', '1', 'M']
