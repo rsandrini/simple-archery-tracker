@@ -145,7 +145,7 @@ export default function SettingsClient({ user }: Props) {
               <button
                 key={h}
                 onClick={() => handleHandChange(h)}
-                className={`flex-1 py-2.5 text-sm font-medium rounded-lg border transition-colors capitalize
+                className={`flex-1 py-3 text-sm font-medium rounded-lg border transition-colors capitalize
                   ${hand === h
                     ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500'
                     : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
