@@ -6,6 +6,8 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { HomeClient } from './HomeClient'
 import { getAuthenticatedUserId } from '@/lib/auth-utils'
 import { APP_VERSION } from '@/lib/version'
+import { getProgressionData } from '@/lib/db/session-queries'
+import { ProgressSection } from '@/components/analytics/ProgressSection'
 
 const PAGE_SIZE = 5
 
@@ -21,7 +23,7 @@ export default async function HomePage({
   const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1)
   const skip = (page - 1) * PAGE_SIZE
 
-  const [sessions, total] = await Promise.all([
+  const [sessions, total, progressionData] = await Promise.all([
     prisma.session.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -30,6 +32,7 @@ export default async function HomePage({
       skip,
     }),
     prisma.session.count({ where: { userId } }),
+    getProgressionData(userId),
   ])
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
@@ -56,6 +59,8 @@ export default async function HomePage({
         </div>
       ) : (
         <>
+          <ProgressSection sessions={progressionData} />
+
           <ul className="space-y-3">
             {sessions.map(s => (
               <li key={s.id}>

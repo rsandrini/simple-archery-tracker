@@ -42,3 +42,50 @@ export function toSessionData(session: PrismaSession): SessionData {
 export async function getSessionForUser(id: string, userId: string) {
   return fetchSession(id, userId)
 }
+
+function computeMeanSpread(arrows: { x: number; y: number }[]): number {
+  if (arrows.length === 0) return 0
+  const cx = arrows.reduce((s, a) => s + a.x, 0) / arrows.length
+  const cy = arrows.reduce((s, a) => s + a.y, 0) / arrows.length
+  const dists = arrows.map(a => Math.hypot(a.x - cx, a.y - cy))
+  return dists.reduce((s, d) => s + d, 0) / (dists.length || 1)
+}
+
+function computeEndConsistency(ends: { arrows: { points: number }[] }[]): number {
+  if (ends.length < 2) return 0
+  const pts = ends.map(e => e.arrows.reduce((s, a) => s + a.points, 0))
+  const mean = pts.reduce((s, p) => s + p, 0) / pts.length
+  return Math.sqrt(pts.reduce((s, p) => s + (p - mean) ** 2, 0) / pts.length)
+}
+
+export async function getProgressionData(userId: string) {
+  const sessions = await prisma.session.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'asc' },
+    include: {
+      ends: {
+        orderBy: { index: 'asc' },
+        include: { arrows: { orderBy: { index: 'asc' } } },
+      },
+    },
+  })
+
+  return sessions.map(s => {
+    const allArrows = s.ends.flatMap(e => e.arrows)
+    const total = allArrows.reduce((sum, a) => sum + a.points, 0)
+    const totalX = allArrows.filter(a => a.isX).length
+    const bestEnd = Math.max(0, ...s.ends.map(e => e.arrows.reduce((sum, a) => sum + a.points, 0)))
+    const meanSpread = computeMeanSpread(allArrows)
+    const consistency = computeEndConsistency(s.ends)
+    return {
+      id: s.id,
+      modality: s.modality as 'INDOOR' | 'FLINT',
+      createdAt: s.createdAt.toISOString(),
+      total,
+      totalX,
+      bestEnd,
+      meanSpread,
+      consistency,
+    }
+  })
+}
