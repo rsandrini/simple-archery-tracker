@@ -144,7 +144,7 @@ function StarRating({ value, onChange }: { value: number | null; onChange: (v: n
         <button
           key={star}
           type="button"
-          onClick={() => onChange(star === value ? 0 : star)}
+          onClick={() => onChange(star)}
           onMouseEnter={() => setHovered(star)}
           onMouseLeave={() => setHovered(0)}
           className="text-3xl leading-none transition-transform hover:scale-110 focus:outline-none"
@@ -178,7 +178,7 @@ function FatigueCurve({ session }: { session: SessionData }) {
           <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            formatter={(v: number) => [`${v} pts`, 'Score']}
+            formatter={(v) => [`${v ?? 0} pts`, 'Score']}
           />
           <ReferenceLine
             y={avg}
@@ -224,7 +224,7 @@ function ScoreHistogram({ session }: { session: SessionData }) {
           <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            formatter={(v: number) => [v, 'arrows']}
+            formatter={(v) => [v ?? 0, 'arrows']}
           />
           <Bar dataKey="count" radius={[4, 4, 0, 0]}>
             {data.map((entry, i) => (
@@ -328,9 +328,13 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
       if (saveTimer.current) clearTimeout(saveTimer.current)
       setSaveStatus('saving')
       saveTimer.current = setTimeout(async () => {
-        await api.sessions.update(session.id, updates)
-        setSaveStatus('saved')
-        setTimeout(() => setSaveStatus('idle'), 1500)
+        try {
+          await api.sessions.update(session.id, updates)
+          setSaveStatus('saved')
+          setTimeout(() => setSaveStatus('idle'), 1500)
+        } catch {
+          setSaveStatus('idle')
+        }
       }, 600)
     },
     [session.id]
@@ -349,18 +353,22 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
   }
 
   const handleScoreOverride = useCallback(async (arrowId: string, score: ScoreValue) => {
-    await api.arrows.update(arrowId, score)
-    setSession(prev => ({
-      ...prev,
-      ends: prev.ends.map(e => ({
-        ...e,
-        arrows: e.arrows.map(a =>
-          a.id === arrowId
-            ? { ...a, score, points: scoreToPoints(score), isX: isX(score) }
-            : a
-        ),
-      })),
-    }))
+    try {
+      await api.arrows.update(arrowId, score)
+      setSession(prev => ({
+        ...prev,
+        ends: prev.ends.map(e => ({
+          ...e,
+          arrows: e.arrows.map(a =>
+            a.id === arrowId
+              ? { ...a, score, points: scoreToPoints(score), isX: isX(score) }
+              : a
+          ),
+        })),
+      }))
+    } catch {
+      // Select reverts to DB value on next render; nothing else needed
+    }
   }, [])
 
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current) }, [])

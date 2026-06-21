@@ -37,6 +37,8 @@ export function MarkingScreenClient({ session }: Props) {
   const [currentEndIndex, setCurrentEndIndex] = useState(() => findInitialEndIndex(session.ends, config))
   const [toasts, setToasts] = useState<Toast[]>([])
   const [undoing, setUndoing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const toastCounter = useRef(0)
 
   const currentEnd = ends.find(e => e.index === currentEndIndex)
@@ -77,6 +79,10 @@ export function MarkingScreenClient({ session }: Props) {
 
   const handleArrowPlaced = useCallback(
     async (inference: ScoreInference & { x: number; y: number }) => {
+      if (savingRef.current) return
+      savingRef.current = true
+      setSaving(true)
+
       const arrowIndex = currentArrows.length
 
       try {
@@ -117,7 +123,7 @@ export function MarkingScreenClient({ session }: Props) {
             updatedArrows = [...updatedArrows, newArrow]
             next[endIdx] = { ...next[endIdx], arrows: updatedArrows }
           } else {
-            next.push({ id: endId, index: currentEndIndex, arrows: [newArrow] })
+            next.push({ id: endId!, index: currentEndIndex, arrows: [newArrow] })
           }
           return next
         })
@@ -132,6 +138,9 @@ export function MarkingScreenClient({ session }: Props) {
         }
       } catch {
         addToast('Failed to save arrow — please try again')
+      } finally {
+        savingRef.current = false
+        setSaving(false)
       }
     },
     [currentEnd, currentArrows, currentEndIndex, config, session.id, router]
@@ -221,7 +230,7 @@ export function MarkingScreenClient({ session }: Props) {
               arrows={currentArrows}
               ghostArrows={ghostArrows}
               onArrowPlaced={handleArrowPlaced}
-              disabled={false}
+              disabled={saving}
             />
             <button
               onClick={handleUndo}

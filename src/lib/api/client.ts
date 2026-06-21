@@ -63,7 +63,9 @@ export const api = {
         body: JSON.stringify({ score }),
       }).then(r => json(r)),
 
-    delete: (id: string) =>
-      fetch(`/api/arrows/${id}`, { method: 'DELETE' }),
+    delete: async (id: string) => {
+      const res = await fetch(`/api/arrows/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`API error ${res.status}`)
+    },
   },
 }

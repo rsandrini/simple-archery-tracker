@@ -35,7 +35,7 @@ export function ClockChart({ distribution }: Props) {
           />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            formatter={(v: number) => [v, 'arrows']}
+            formatter={(v) => [v ?? 0, 'arrows']}
           />
         </RadarChart>
       </ResponsiveContainer>

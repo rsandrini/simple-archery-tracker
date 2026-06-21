@@ -35,6 +35,10 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid score' }, { status: 400 })
   }
 
+  if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index !== end.arrows.length) {
+    return NextResponse.json({ error: 'Arrow index conflict' }, { status: 409 })
+  }
+
   const newArrow: ArrowData = {
     id: 'pending',
     index,
