@@ -1,11 +1,12 @@
-import type { ArrowData, ScoreValue, RoundConfig } from '@/lib/domain/types'
+'use client'
+
+import type { EndData, ScoreValue, RoundConfig } from '@/lib/domain/types'
 import { sortArrowsDescending } from '@/lib/domain/scoring'
 
 interface Props {
-  arrows: ArrowData[]
+  ends: EndData[]
   config: RoundConfig
-  endIndex: number
-  isWalkUp: boolean
+  currentEndIndex: number
   onScoreOverride?: (arrowId: string, score: ScoreValue) => void
 }
 
@@ -19,66 +20,77 @@ const scoreColor: Record<ScoreValue, string> = {
   M:   'text-red-700 dark:text-red-500 italic',
 }
 
-export function EndScoreTable({ arrows, config, endIndex, isWalkUp, onScoreOverride }: Props) {
-  const sorted = sortArrowsDescending(arrows)
-  const total = arrows.reduce((s, a) => s + a.points, 0)
+export function EndScoreTable({ ends, config, currentEndIndex, onScoreOverride }: Props) {
+  const rows = Array.from({ length: currentEndIndex + 1 }, (_, i) => {
+    const end = ends.find(e => e.index === i)
+    return { index: i, arrows: end ? sortArrowsDescending(end.arrows) : [] }
+  })
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-gray-50 dark:bg-gray-800/50 text-xs text-gray-500 dark:text-gray-400 uppercase">
           <tr>
-            <th className="px-3 py-2 text-left">#</th>
-            {isWalkUp && <th className="px-3 py-2 text-left">Dist</th>}
-            <th className="px-3 py-2 text-center">Score</th>
-            <th className="px-3 py-2 text-right">Pts</th>
+            <th className="px-2 py-2 text-left">#</th>
+            {Array.from({ length: config.arrowsPerEnd }, (_, i) => (
+              <th key={i} className="px-1 py-2 text-center" />
+            ))}
+            <th className="px-2 py-2 text-right">Pts</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-          {sorted.map((arrow, i) => (
-            <tr key={arrow.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-              <td className="px-3 py-2 text-gray-400 dark:text-gray-500">{i + 1}</td>
-              {isWalkUp && (
-                <td className="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs">
-                  {config.endDistances[endIndex]?.arrowDistances?.[arrow.index] ?? '—'}
+          {rows.map(({ index, arrows }) => {
+            const isCurrent = index === currentEndIndex
+            const isComplete = arrows.length === config.arrowsPerEnd
+            const total = arrows.reduce((s, a) => s + a.points, 0)
+
+            return (
+              <tr
+                key={index}
+                className={isCurrent
+                  ? 'bg-blue-50 dark:bg-blue-900/20'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'}
+              >
+                <td className={`px-2 py-2 text-xs font-medium tabular-nums ${
+                  isCurrent ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
+                }`}>
+                  {index + 1}
                 </td>
-              )}
-              <td className="px-3 py-2 text-center">
-                {onScoreOverride ? (
-                  <select
-                    value={arrow.score}
-                    onChange={e => onScoreOverride(arrow.id, e.target.value as ScoreValue)}
-                    className={`text-center bg-transparent border-0 outline-none cursor-pointer ${scoreColor[arrow.score]}`}
-                  >
-                    {config.validScores.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className={scoreColor[arrow.score]}>{arrow.score}</span>
-                )}
-              </td>
-              <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-300 font-mono">{arrow.points}</td>
-            </tr>
-          ))}
-          {sorted.length === 0 && (
-            <tr>
-              <td colSpan={isWalkUp ? 4 : 3} className="px-3 py-4 text-center text-gray-400 dark:text-gray-500 text-xs">
-                No arrows yet
-              </td>
-            </tr>
-          )}
+
+                {Array.from({ length: config.arrowsPerEnd }, (_, slot) => {
+                  const arrow = arrows[slot]
+                  return (
+                    <td key={slot} className="px-1 py-2 text-center">
+                      {arrow ? (
+                        onScoreOverride ? (
+                          <select
+                            value={arrow.score}
+                            onChange={e => onScoreOverride(arrow.id, e.target.value as ScoreValue)}
+                            className={`bg-transparent border-0 outline-none cursor-pointer text-xs text-center w-full ${scoreColor[arrow.score]}`}
+                          >
+                            {config.validScores.map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className={`text-xs ${scoreColor[arrow.score]}`}>{arrow.score}</span>
+                        )
+                      ) : (
+                        <span className="text-gray-300 dark:text-gray-600 text-xs">·</span>
+                      )}
+                    </td>
+                  )
+                })}
+
+                <td className="px-2 py-2 text-right font-mono text-xs text-gray-700 dark:text-gray-300">
+                  {isComplete
+                    ? total
+                    : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
-        {sorted.length > 0 && (
-          <tfoot className="bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-            <tr>
-              <td colSpan={isWalkUp ? 3 : 2} className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                End total
-              </td>
-              <td className="px-3 py-2 text-right font-bold text-gray-800 dark:text-gray-200">{total}</td>
-            </tr>
-          </tfoot>
-        )}
       </table>
     </div>
   )

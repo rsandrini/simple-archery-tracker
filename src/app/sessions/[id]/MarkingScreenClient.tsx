@@ -255,10 +255,9 @@ export function MarkingScreenClient({ session }: Props) {
             />
 
             <EndScoreTable
-              arrows={currentArrows}
+              ends={ends}
               config={config}
-              endIndex={currentEndIndex}
-              isWalkUp={isWalkUp}
+              currentEndIndex={currentEndIndex}
               onScoreOverride={handleScoreOverride}
             />
           </div>
