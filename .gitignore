@@ -43,6 +43,13 @@ next-env.d.ts
 # claude code local session data
 .claude/
 
+# superpowers / ai tooling (not for version control)
+.superpowers/
+docs/superpowers/
+
+# persistent data volume (docker)
+/data/
+
 # debug logs
 npm-debug.log*
 yarn-debug.log*

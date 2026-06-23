@@ -337,6 +337,8 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
   const config = getConfig(session.modality)
   const summary = sessionSummary(session)
   const maxTotal = config.totalEnds * config.arrowsPerEnd * 5
+  const isComplete = session.ends.length >= config.totalEnds &&
+    session.ends.every(e => e.arrows.length >= config.arrowsPerEnd)
   const pct = ((summary.total / maxTotal) * 100).toFixed(1)
 
   const persist = useCallback(
@@ -404,9 +406,11 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
         </span>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Link href={`/sessions/${session.id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
-            Continue
-          </Link>
+          {!isComplete && (
+            <Link href={`/sessions/${session.id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+              Continue
+            </Link>
+          )}
         </div>
       </header>
 
@@ -448,9 +452,6 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
                 <span><span className="font-semibold text-gray-900 dark:text-gray-100">{session.ends.length}</span> ends shot</span>
               </div>
             </div>
-
-            {/* Shot chart */}
-            <ShotChart session={session} />
 
             {/* All arrows — unified flat table */}
             <div className="space-y-3">

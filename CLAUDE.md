@@ -12,7 +12,8 @@ Web app to record archery training sessions. User marks arrows on an SVG target 
 
 - Next.js 14+ (App Router) + TypeScript + Tailwind CSS
 - SQLite via Prisma ORM (`DATABASE_URL=file:./dev.db`), client at `src/generated/prisma`
-- Single-user MVP — no auth
+- Auth via NextAuth v5 (email/password, forgot-password flow, rate limiting)
+- PWA — `@serwist/next` service worker, IndexedDB (Dexie) offline store, sync queue
 - SVG for targets (not canvas)
 - Vitest for unit tests (excludes `src/app/**`)
 - Dark mode via `ThemeContext` + `localStorage` + `darkMode: 'class'` in `tailwind.config.ts`
@@ -171,6 +172,9 @@ model Arrow {
 | POST | `/api/sessions/[id]/ends/[endId]/arrows` | Add arrow; runs double-hit check server-side |
 | PATCH | `/api/arrows/[id]` | Manual score override; recalculates points+isX |
 | DELETE | `/api/arrows/[id]` | Remove arrow (used by undo) |
+| POST | `/api/users` | Register new user; body: `{ email, password }` |
+| POST | `/api/auth/forgot-password` | Send reset-password email |
+| POST | `/api/auth/reset-password` | Consume token + set new password |
 
 ## Summary / Shot Chart
 
@@ -192,5 +196,7 @@ Accessible at `/sessions/[id]/summary`. Shows:
 - [x] Phase 4: Client API helpers (`src/lib/api/client.ts`)
 - [x] Phase 5: UI components (target SVG, zoom overlay with live score, scoring table, session cards)
 - [x] Phase 6: Pages (home, marking screen with ghost arrows + undo, summary with shot chart)
-- [ ] Phase 7: Finalize tests
-- [ ] Phase 8: README
+- [x] Phase 7: Auth (NextAuth v5, register/login/forgot-password, rate limiting, security headers)
+- [x] Phase 8: PWA + Offline-first (serwist SW, IndexedDB/Dexie, sync queue, offline indicator)
+- [x] Phase 9: Docker deployment (Dockerfile, docker-compose, Cloudflare Tunnel)
+- [ ] Phase 10: Finalize tests + README

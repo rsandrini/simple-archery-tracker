@@ -1,6 +1,6 @@
 # Quiver — Roadmap
 
-_Last updated: 2026-06-22_
+_Last updated: 2026-06-23_
 
 ---
 
@@ -13,6 +13,7 @@ _Last updated: 2026-06-22_
 - Auth — email/password, forgot password, rate limiting, security headers
 - Docker + Cloudflare Tunnel deployment
 - Analytics tab — avg pts per arrow, X rate, miss rate, dispersion ellipse, centroid bias
+- Offline-first PWA — installable app, IndexedDB local store, optimistic writes, sync queue, offline indicator
 
 ---
 
@@ -31,16 +32,6 @@ _Last updated: 2026-06-22_
 
 ## Medium-term
 
-### Offline-first (PWA)
-**Goal:** The app works with no internet connection. Data is never lost.
-
-- PWA manifest + service worker — installable on iOS/Android home screen
-- IndexedDB local store (Dexie.js) mirrors the server schema
-- Optimistic writes — every action writes locally first, then syncs to server
-- Sync queue — pending mutations are retried automatically when connection is restored
-- Conflict resolution — last-write-wins per arrow; server is source of truth on merge
-- Offline indicator in UI (subtle banner when offline, sync status when reconnecting)
-
 ### Guest mode (no account required)
 **Goal:** A new user can open the app and start shooting immediately, no sign-up friction.
 
@@ -51,7 +42,7 @@ _Last updated: 2026-06-22_
 - Option to clear local data after successful sync
 - Guest data persists across browser sessions (IndexedDB, not sessionStorage)
 
-> **Note:** Offline-first and guest mode share the same IndexedDB layer. Build offline-first first — guest mode is then a thin layer on top (skip the auth check, point all reads/writes at local DB only).
+> **Note:** Offline-first and guest mode share the same IndexedDB layer. Guest mode is a thin layer on top (skip the auth check, point all reads/writes at local DB only).
 
 ---
 

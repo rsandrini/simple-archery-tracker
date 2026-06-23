@@ -16,9 +16,13 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
 ]
 
+const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
+  ? process.env.ALLOWED_DEV_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+  : []
+
 const nextConfig: NextConfig = {
   output: 'standalone',
-  allowedDevOrigins: ['192.168.31.205'],
+  allowedDevOrigins,
   serverExternalPackages: ['@prisma/client', '@prisma/adapter-better-sqlite3', 'better-sqlite3', 'pino', 'pino-pretty', 'thread-stream'],
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
@@ -35,10 +39,8 @@ const nextConfig: NextConfig = {
 };
 
 export default withSerwist(withSentryConfig(nextConfig, {
-  // TODO: replace with your Sentry org slug from sentry.io/organizations/<org>/
-  org: 'your-sentry-org-slug',
-  // TODO: replace with your Sentry project slug from sentry.io/organizations/<org>/projects/<project>/
-  project: 'your-sentry-project-slug',
+  org: process.env.SENTRY_ORG ?? '',
+  project: process.env.SENTRY_PROJECT ?? '',
   silent: !process.env.CI,
   widenClientFileUpload: true,
   sourcemaps: { deleteSourcemapsAfterUpload: true },
