@@ -20,7 +20,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!credentials?.email || !credentials?.password) return null
         const prisma = (await import('@/lib/db/prisma')).default
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email: (credentials.email as string).toLowerCase() },
         })
         if (!user) {
           logger.warn({ email: credentials.email }, 'Failed login attempt: unknown email')

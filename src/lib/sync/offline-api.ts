@@ -19,6 +19,27 @@ async function enqueue(method: 'POST' | 'PATCH' | 'DELETE', url: string, body: u
 
 export const offlineApi = {
   sessions: {
+    async update(sessionId: string, data: { notes?: string | null; rating?: number | null }) {
+      // Write to local IndexedDB first
+      await db.sessions.update(sessionId, { ...data, _syncStatus: 'pending' })
+      const url = `/api/sessions/${sessionId}`
+      if (isOnline()) {
+        const res = await fetch(url, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        })
+        if (res.ok) {
+          await db.sessions.update(sessionId, { _syncStatus: 'synced' })
+          return await res.json()
+        }
+        await enqueue('PATCH', url, data)
+      } else {
+        await enqueue('PATCH', url, data)
+      }
+      return { session: { id: sessionId, ...data } }
+    },
+
     create: async (modality: Modality, targetVariant: TargetVariant) => {
       const id = crypto.randomUUID()
       const now = new Date().toISOString()

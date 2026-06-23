@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
+import { Prisma } from '@/generated/prisma/client'
 import { resolveDoubleHit, scoreToPoints, isX } from '@/lib/domain/scoring'
 import type { ArrowData, ScoreValue } from '@/lib/domain/types'
 import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth-utils'
@@ -33,6 +34,10 @@ export async function POST(
 
   if (!isValidScore(score)) {
     return NextResponse.json({ error: 'Invalid score' }, { status: 400 })
+  }
+
+  if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) {
+    return NextResponse.json({ error: 'x and y must be finite numbers' }, { status: 400 })
   }
 
   if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index !== end.arrows.length) {
@@ -81,20 +86,27 @@ export async function POST(
   const resolvedNew = resolved[resolved.length - 1]
 
   // Create the new arrow
-  const created = await prisma.arrow.create({
-    data: {
-      ...(arrowId ? { id: arrowId } : {}),
-      endId,
-      index,
-      score: resolvedNew.score,
-      points: resolvedNew.points,
-      isX: resolvedNew.isX,
-      x,
-      y,
-      distance: distance ?? null,
-      spotIndex: spotIndex ?? null,
-    },
-  })
+  try {
+    const created = await prisma.arrow.create({
+      data: {
+        ...(arrowId ? { id: arrowId } : {}),
+        endId,
+        index,
+        score: resolvedNew.score,
+        points: resolvedNew.points,
+        isX: resolvedNew.isX,
+        x,
+        y,
+        distance: distance ?? null,
+        spotIndex: spotIndex ?? null,
+      },
+    })
 
-  return NextResponse.json({ arrow: created, updatedArrows: updatedExisting }, { status: 201 })
+    return NextResponse.json({ arrow: created, updatedArrows: updatedExisting }, { status: 201 })
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+      return NextResponse.json({ error: 'conflict' }, { status: 409 })
+    }
+    throw e
+  }
 }

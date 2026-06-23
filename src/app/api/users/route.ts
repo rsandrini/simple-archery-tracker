@@ -5,7 +5,8 @@ import { validateRegistrationInput } from '@/lib/auth-validation'
 
 export async function POST(req: NextRequest) {
   const body = await req.json() as { email?: string; password?: string; name?: string }
-  const { email = '', password = '', name } = body
+  const { email: rawEmail = '', password = '', name } = body
+  const email = rawEmail.toLowerCase()
 
   const validationError = validateRegistrationInput(email, password)
   if (validationError) {

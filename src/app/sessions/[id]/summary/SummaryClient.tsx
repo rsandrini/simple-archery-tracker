@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { sessionSummary, sortArrowsDescending, scoreToPoints, isX } from '@/lib/domain/scoring'
 import { getConfig } from '@/lib/domain/rounds'
-import { api } from '@/lib/api/client'
+import { offlineApi as api } from '@/lib/sync/offline-api'
 import type { SessionData, ScoreValue } from '@/lib/domain/types'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,

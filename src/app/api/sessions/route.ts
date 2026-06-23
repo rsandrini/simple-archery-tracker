@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
+import { Prisma } from '@/generated/prisma/client'
 import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth-utils'
 import { isValidModality, isValidVariant } from '@/lib/api-validation'
 
@@ -29,13 +30,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid target variant' }, { status: 400 })
   }
 
-  const session = await prisma.session.create({
-    data: {
-      ...(id ? { id } : {}),
-      modality,
-      targetVariant,
-      userId,
-    },
-  })
-  return NextResponse.json(session, { status: 201 })
+  try {
+    const session = await prisma.session.create({
+      data: {
+        ...(id ? { id } : {}),
+        modality,
+        targetVariant,
+        userId,
+      },
+    })
+    return NextResponse.json(session, { status: 201 })
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+      return NextResponse.json({ error: 'conflict' }, { status: 409 })
+    }
+    throw e
+  }
 }

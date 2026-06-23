@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
+import { Prisma } from '@/generated/prisma/client'
 import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth-utils'
 
 export async function POST(
@@ -20,12 +21,19 @@ export async function POST(
   const existing = await prisma.end.findFirst({ where: { sessionId, index } })
   if (existing) return NextResponse.json(existing)
 
-  const end = await prisma.end.create({
-    data: {
-      ...(endId ? { id: endId } : {}),
-      sessionId,
-      index,
-    },
-  })
-  return NextResponse.json(end, { status: 201 })
+  try {
+    const end = await prisma.end.create({
+      data: {
+        ...(endId ? { id: endId } : {}),
+        sessionId,
+        index,
+      },
+    })
+    return NextResponse.json(end, { status: 201 })
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+      return NextResponse.json({ error: 'conflict' }, { status: 409 })
+    }
+    throw e
+  }
 }
