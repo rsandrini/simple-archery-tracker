@@ -3,6 +3,7 @@ import { SessionProvider } from 'next-auth/react'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/lib/context/ThemeContext'
 import UserHeader from '@/components/ui/UserHeader'
+import { SyncBanner } from '@/components/ui/SyncBanner'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </ThemeProvider>
         </SessionProvider>
+        <SyncBanner />
       </body>
     </html>
   )
