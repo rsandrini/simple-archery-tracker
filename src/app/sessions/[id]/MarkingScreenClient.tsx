@@ -6,7 +6,7 @@ import type { SessionData, ArrowData, ScoreValue, EndData, ScoreInference } from
 import { getConfig, getArrowDistance, getEndTargetVariant } from '@/lib/domain/rounds'
 import { getTargetDef } from '@/lib/domain/target'
 import { runningTotals, endTotal, scoreToPoints, isX } from '@/lib/domain/scoring'
-import { api } from '@/lib/api/client'
+import { offlineApi as api } from '@/lib/sync/offline-api'
 import { ArcheryTarget } from '@/components/target/ArcheryTarget'
 import { EndScoreTable } from '@/components/scoring/EndScoreTable'
 import { RunningTotalDisplay } from '@/components/scoring/RunningTotalDisplay'
