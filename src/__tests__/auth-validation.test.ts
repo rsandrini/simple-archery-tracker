@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateRegistrationInput } from '@/lib/auth-validation'
+import { validateRegistrationInput, normalizeEmail } from '@/lib/auth-validation'
 
 describe('validateRegistrationInput', () => {
   it('returns null for valid inputs', () => {
@@ -24,5 +24,20 @@ describe('validateRegistrationInput', () => {
 
   it('accepts name as optional (not validated here)', () => {
     expect(validateRegistrationInput('user@example.com', 'password123')).toBeNull()
+  })
+})
+
+describe('normalizeEmail', () => {
+  it('lowercases uppercase email', () => {
+    expect(normalizeEmail('User@Example.COM')).toBe('user@example.com')
+  })
+  it('trims leading/trailing whitespace', () => {
+    expect(normalizeEmail('  user@example.com  ')).toBe('user@example.com')
+  })
+  it('leaves already-lowercase email unchanged', () => {
+    expect(normalizeEmail('user@example.com')).toBe('user@example.com')
+  })
+  it('handles mixed case domain', () => {
+    expect(normalizeEmail('User@EXAMPLE.com')).toBe('user@example.com')
   })
 })

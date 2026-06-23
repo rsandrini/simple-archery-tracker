@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import prisma from '@/lib/db/prisma'
-import { validateRegistrationInput } from '@/lib/auth-validation'
+import { validateRegistrationInput, normalizeEmail } from '@/lib/auth-validation'
 
 export async function POST(req: NextRequest) {
   const body = await req.json() as { email?: string; password?: string; name?: string }
   const { email: rawEmail = '', password = '', name } = body
-  const email = rawEmail.toLowerCase()
+  const email = normalizeEmail(rawEmail)
 
   const validationError = validateRegistrationInput(email, password)
   if (validationError) {

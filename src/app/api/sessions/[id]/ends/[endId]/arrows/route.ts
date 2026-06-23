@@ -5,6 +5,7 @@ import { resolveDoubleHit, scoreToPoints, isX } from '@/lib/domain/scoring'
 import type { ArrowData, ScoreValue } from '@/lib/domain/types'
 import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth-utils'
 import { isValidScore } from '@/lib/api-validation'
+import { validateArrowCoords } from '@/lib/arrow-validation'
 
 export async function POST(
   req: NextRequest,
@@ -36,8 +37,9 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid score' }, { status: 400 })
   }
 
-  if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) {
-    return NextResponse.json({ error: 'x and y must be finite numbers' }, { status: 400 })
+  const coordError = validateArrowCoords(x, y)
+  if (coordError) {
+    return NextResponse.json({ error: coordError }, { status: 400 })
   }
 
   if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index !== end.arrows.length) {
