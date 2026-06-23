@@ -1,5 +1,13 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withSerwistInit from '@serwist/next'
+
+const withSerwist = withSerwistInit({
+  swSrc: 'src/app/sw.ts',
+  swDest: 'public/sw.js',
+  // Don't cache API routes — they must reach the server when online
+  exclude: [/api\//],
+})
 
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -26,7 +34,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+export default withSerwist(withSentryConfig(nextConfig, {
   // TODO: replace with your Sentry org slug from sentry.io/organizations/<org>/
   org: 'your-sentry-org-slug',
   // TODO: replace with your Sentry project slug from sentry.io/organizations/<org>/projects/<project>/
@@ -36,4 +44,4 @@ export default withSentryConfig(nextConfig, {
   sourcemaps: { deleteSourcemapsAfterUpload: true },
   disableLogger: true,
   automaticVercelMonitors: false,
-})
+}))

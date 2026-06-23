@@ -55,3 +55,7 @@ yarn-error.log*
 # scratch / ad-hoc scripts
 verify-session.mjs
 temp-images/
+
+# serwist service worker (generated at build time)
+/public/sw.js
+/public/sw.js.map

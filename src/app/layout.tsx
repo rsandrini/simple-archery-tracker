@@ -38,6 +38,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#111827" />
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <SessionProvider>
@@ -47,6 +49,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </ThemeProvider>
         </SessionProvider>
         <SyncBanner />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')`,
+          }}
+        />
       </body>
     </html>
   )

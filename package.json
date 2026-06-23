@@ -13,6 +13,7 @@
     "@prisma/adapter-better-sqlite3": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@sentry/nextjs": "^10.59.0",
+    "@serwist/next": "^9.5.11",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",
     "dexie": "^4.4.4",
@@ -23,7 +24,8 @@
     "prisma": "^7.8.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "serwist": "^9.5.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
