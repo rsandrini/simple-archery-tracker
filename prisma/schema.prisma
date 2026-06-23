@@ -34,6 +34,7 @@ model Session {
   modality      String
   targetVariant String   @default("1-SPOT")
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   notes         String?
   rating        Int?
   ends          End[]
@@ -50,17 +51,18 @@ model End {
 }
 
 model Arrow {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   endId     String
-  end       End     @relation(fields: [endId], references: [id], onDelete: Cascade)
+  end       End      @relation(fields: [endId], references: [id], onDelete: Cascade)
   index     Int
   score     String
   points    Int
-  isX       Boolean @default(false)
+  isX       Boolean  @default(false)
   x         Float
   y         Float
   distance  String?
   spotIndex Int?
+  updatedAt DateTime @updatedAt
 
   @@unique([endId, index])
 }

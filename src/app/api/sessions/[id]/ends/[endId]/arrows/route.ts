@@ -29,7 +29,7 @@ export async function POST(
     return NextResponse.json({ error: 'End not found' }, { status: 404 })
   }
 
-  const { index, score, x, y, distance, spotIndex } = body
+  const { index, score, x, y, distance, spotIndex, id: arrowId } = body
 
   if (!isValidScore(score)) {
     return NextResponse.json({ error: 'Invalid score' }, { status: 400 })
@@ -83,6 +83,7 @@ export async function POST(
   // Create the new arrow
   const created = await prisma.arrow.create({
     data: {
+      ...(arrowId ? { id: arrowId } : {}),
       endId,
       index,
       score: resolvedNew.score,

@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return unauthorizedResponse()
 
   const body = await req.json()
-  const { modality, targetVariant = '1-SPOT' } = body
+  const { modality, targetVariant = '1-SPOT', id } = body
 
   if (!isValidModality(modality)) {
     return NextResponse.json({ error: 'Invalid modality' }, { status: 400 })
@@ -30,7 +30,12 @@ export async function POST(req: NextRequest) {
   }
 
   const session = await prisma.session.create({
-    data: { modality, targetVariant, userId },
+    data: {
+      ...(id ? { id } : {}),
+      modality,
+      targetVariant,
+      userId,
+    },
   })
   return NextResponse.json(session, { status: 201 })
 }

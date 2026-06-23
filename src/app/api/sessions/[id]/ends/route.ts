@@ -14,12 +14,18 @@ export async function POST(
   const owned = await prisma.session.findFirst({ where: { id: sessionId, userId }, select: { id: true } })
   if (!owned) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const { index } = await req.json() as { index: number }
+  const { index, id: endId } = await req.json() as { index: number; id?: string }
 
   // Upsert: return existing end if already created (race-condition safe)
   const existing = await prisma.end.findFirst({ where: { sessionId, index } })
   if (existing) return NextResponse.json(existing)
 
-  const end = await prisma.end.create({ data: { sessionId, index } })
+  const end = await prisma.end.create({
+    data: {
+      ...(endId ? { id: endId } : {}),
+      sessionId,
+      index,
+    },
+  })
   return NextResponse.json(end, { status: 201 })
 }
