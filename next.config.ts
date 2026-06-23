@@ -42,6 +42,8 @@ export default withSerwist(withSentryConfig(nextConfig, {
   silent: !process.env.CI,
   widenClientFileUpload: true,
   sourcemaps: { deleteSourcemapsAfterUpload: true },
-  disableLogger: true,
-  automaticVercelMonitors: false,
+  webpack: {
+    treeshake: { removeDebugLogging: true },
+    automaticVercelMonitors: false,
+  },
 }))
