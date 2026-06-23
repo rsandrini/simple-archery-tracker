@@ -8,20 +8,29 @@ Record sessions, track arrow placement on interactive targets, and review your p
 
 ## Screenshots
 
+### Recording arrows — Indoor 5-spot
+![Indoor 5-spot in action](images/5spot.gif)
+
 ### Sessions list
-![Sessions list](images/main.png)
-
-### Session summary — score & shot chart
-![Session summary](images/details.png)
-
-### Session summary — stats, notes & arrow table
-![Session details](images/details2.png)
+![Sessions list](images/main-page.png)
 
 ### Recording arrows — Indoor 1-spot
-![Indoor 1-spot target](images/target.png)
+![Indoor 1-spot target](images/arrow-view.png)
 
-### Recording arrows — Indoor 5-spot
-![Indoor 5-spot target](images/target2.png)
+### Session summary — score table
+![Session overview](images/overview-page.png)
+
+### Analytics — shot chart & grouping stats
+![Shot chart](images/analytics1.png)
+
+### Analytics — clock distribution & per-arrow stats
+![Clock distribution](images/analytics2.png)
+
+### Analytics — points per end & score distribution
+![Score distribution](images/analytics3.png)
+
+### Analytics — multi-face per-spot breakdown
+![Per-spot analytics](images/analytics4.png)
 
 ---
 

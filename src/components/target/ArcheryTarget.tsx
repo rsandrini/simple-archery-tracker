@@ -153,7 +153,7 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
           clickY={dragPoint.y}
           target={target}
           existingArrows={arrows}
-          liveScore={inferScoreFromCoords(dragPoint.x, dragPoint.y, target.modality, target.variant).score}
+          liveScore={inferScoreFromCoords(dragPoint.x, dragPoint.y, target.modality, target.variant, target.arrowRadius / 2).score}
           color={dotColors[arrows.length % dotColors.length]}
         />
       )}

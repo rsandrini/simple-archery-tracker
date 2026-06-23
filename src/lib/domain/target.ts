@@ -120,10 +120,12 @@ export function inferScoreFromCoords(
   x: number,
   y: number,
   modality: Modality,
-  variant: TargetVariant
+  variant: TargetVariant,
+  arrowRadiusOverride?: number
 ): ScoreInference {
   const target = getTargetDef(modality, variant)
-  const { rings, arrowRadius } = target
+  const arrowRadius = arrowRadiusOverride ?? target.arrowRadius
+  const { rings } = target
   const isSingleSpot = target.spots.length === 1
 
   if (isSingleSpot) {
