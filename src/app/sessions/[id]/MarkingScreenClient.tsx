@@ -12,6 +12,7 @@ import { EndScoreTable } from '@/components/scoring/EndScoreTable'
 import { RunningTotalDisplay } from '@/components/scoring/RunningTotalDisplay'
 import { EndProgressBar } from '@/components/session/EndProgressBar'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { hydrateSession } from '@/lib/sync/hydrate'
 
 interface Props {
   session: SessionData
@@ -188,6 +189,10 @@ export function MarkingScreenClient({ session }: Props) {
     },
     []
   )
+
+  useEffect(() => {
+    hydrateSession(session).catch(() => {}) // best-effort; never block the UI
+  }, [session.id]) // only re-run if the session ID changes
 
   useEffect(() => {
     if (isSessionComplete) {

@@ -17,6 +17,7 @@ import { ShotChart } from '@/components/analytics/ShotChart'
 import { ClockChart } from '@/components/analytics/ClockChart'
 import { PatternHints } from '@/components/analytics/PatternHints'
 import type { DominantHand } from '@/lib/domain/types'
+import { hydrateSession } from '@/lib/sync/hydrate'
 
 interface Props {
   session: SessionData
@@ -387,6 +388,10 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
   }, [])
 
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current) }, [])
+
+  useEffect(() => {
+    hydrateSession(session).catch(() => {}) // best-effort; never block the UI
+  }, [session.id]) // only re-run if the session ID changes
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
