@@ -35,14 +35,21 @@ export const offlineApi = {
       })
 
       if (isOnline()) {
-        return api.sessions.create(modality, targetVariant)
-          // Replace the server-generated id with our client id
-          // (server will use our id because we pass it)
-          .catch(async () => {
-            await db.sessions.update(id, { _syncStatus: 'pending' })
-            await enqueue('POST', '/api/sessions', { id, modality, targetVariant })
-            return { id, modality, targetVariant, createdAt: now, ends: [] }
+        try {
+          const res = await fetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, modality, targetVariant }),
           })
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          const data = await res.json()
+          await db.sessions.update(id, { _syncStatus: 'synced' })
+          return data
+        } catch {
+          await db.sessions.update(id, { _syncStatus: 'pending' })
+          await enqueue('POST', '/api/sessions', { id, modality, targetVariant })
+          return { id, modality, targetVariant, createdAt: now, ends: [] }
+        }
       }
 
       await enqueue('POST', '/api/sessions', { id, modality, targetVariant })
@@ -51,14 +58,20 @@ export const offlineApi = {
   },
 
   ends: {
-    create: async (sessionId: string, index: number) => {
+    create: async (sessionId: string, index: number): Promise<{ id: string; sessionId: string; index: number }> => {
       const id = crypto.randomUUID()
 
       await db.ends.add({ id, sessionId, index, _syncStatus: 'pending' })
 
       if (isOnline()) {
         try {
-          const result = await api.ends.create(sessionId, index)
+          const res = await fetch(`/api/sessions/${sessionId}/ends`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, index }),
+          })
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          const result = await res.json() as { id: string; sessionId: string; index: number }
           await db.ends.update(id, { _syncStatus: 'synced' })
           return result
         } catch {
@@ -101,7 +114,13 @@ export const offlineApi = {
 
       if (isOnline()) {
         try {
-          const result = await api.arrows.create(sessionId, endId, { ...data, id } as typeof data & { id: string })
+          const res = await fetch(`/api/sessions/${sessionId}/ends/${endId}/arrows`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, ...data }),
+          })
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          const result = await res.json()
           await db.arrows.update(id, { _syncStatus: 'synced' })
           return result
         } catch {
