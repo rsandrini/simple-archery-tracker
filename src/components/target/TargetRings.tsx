@@ -12,7 +12,7 @@ export function TargetRings({ spot, rings, background }: Props) {
 
   const xRing = rings.find(r => r.score === 'X')
   const xRadius = xRing?.outerRadius ?? 8
-  const fontSize = Math.max(2, xRadius * 0.65)
+  const fontSize = Math.max(2, xRadius * 0.95)
   const textFill = xRing?.fill === '#FFFFFF' ? '#333' : '#FFFFFF'
 
   return (
@@ -28,18 +28,18 @@ export function TargetRings({ spot, rings, background }: Props) {
           r={ring.outerRadius}
           fill={ring.fill}
           stroke="#999"
-          strokeWidth={0.4}
+          strokeWidth={0.2}
         />
       ))}
-      {/* White border overlays drawn after all fills — ensures full visibility against blue */}
-      {sorted.filter(r => r.strokeColor === 'white').map((ring, i) => (
+      {/* Border overlays drawn after all fills — ensures visibility against any fill color */}
+      {sorted.filter(r => r.strokeColor).map((ring, i) => (
         <circle
           key={`border-${i}`}
           cx={cx}
           cy={cy}
           r={ring.outerRadius}
           fill="none"
-          stroke="white"
+          stroke={ring.strokeColor}
           strokeWidth={ring.strokeWidth ?? 0.5}
         />
       ))}

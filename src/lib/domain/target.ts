@@ -25,11 +25,14 @@ const INDOOR_5SPOT_RINGS: RingDef[] = [
 ]
 
 // Flint: base spotRadius = 80
+// 6 visual rings: black X (white border) → black 5 → white 4 pair (black borders) → black 3 pair (white borders)
 const FLINT_RINGS: RingDef[] = [
-  { score: 'X', outerRadius: 8,  fill: '#1A1A1A' },
-  { score: '5', outerRadius: 18, fill: '#FFFFFF' },
-  { score: '4', outerRadius: 45, fill: '#FFFFFF' },
-  { score: '3', outerRadius: 80, fill: '#1A1A1A' },
+  { score: 'X', outerRadius: 8,  fill: '#1A1A1A', strokeColor: 'white', strokeWidth: 0.5 },
+  { score: '5', outerRadius: 18, fill: '#1A1A1A' },
+  { score: '4', outerRadius: 32, fill: '#FFFFFF', strokeColor: '#1A1A1A', strokeWidth: 0.3 },
+  { score: '4', outerRadius: 45, fill: '#FFFFFF', strokeColor: '#1A1A1A', strokeWidth: 0.3 },
+  { score: '3', outerRadius: 62, fill: '#1A1A1A', strokeColor: 'white', strokeWidth: 0.3 },
+  { score: '3', outerRadius: 80, fill: '#1A1A1A', strokeColor: 'white', strokeWidth: 0.6 },
 ]
 
 const INDOOR_1_SPOTS: SpotDef[] = [
