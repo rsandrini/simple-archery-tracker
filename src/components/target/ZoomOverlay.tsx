@@ -15,12 +15,14 @@ interface Props {
   existingArrows: Array<{ x: number; y: number; score: string }>
   liveScore?: string
   color?: string
+  scale?: number
 }
 
-export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore, color = '#FF4136' }: Props) {
+export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore, color = '#FF4136', scale = 1 }: Props) {
   const half = ZOOM_WINDOW / 2
   const vx = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickX - half))
   const vy = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickY - half))
+  const displaySize = Math.round(ZOOM_DISPLAY * scale)
 
   return (
     // pointer-events: none so all touch/mouse events fall through to the SVG below
@@ -28,8 +30,8 @@ export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore,
       <div className="bg-white rounded-2xl shadow-2xl p-3 flex flex-col items-center gap-2">
         <p className="text-xs font-medium text-gray-500 tracking-wide">Release to place arrow</p>
         <svg
-          width={ZOOM_DISPLAY}
-          height={ZOOM_DISPLAY}
+          width={displaySize}
+          height={displaySize}
           viewBox={`${vx} ${vy} ${ZOOM_WINDOW} ${ZOOM_WINDOW}`}
           className="border border-gray-200 rounded-lg"
         >

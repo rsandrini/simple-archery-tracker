@@ -13,9 +13,10 @@ interface Props {
   ghostArrows?: ArrowData[]
   onArrowPlaced: (inference: ScoreInference & { x: number; y: number }) => void
   disabled?: boolean
+  scale?: number
 }
 
-export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced, disabled }: Props) {
+export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced, disabled, scale = 1 }: Props) {
   const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const isDragging = useRef(false)
@@ -108,8 +109,8 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
       <svg
         ref={svgRef}
         viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
-        className={`w-full max-w-sm aspect-square touch-none select-none ${disabled ? 'opacity-60' : 'cursor-crosshair'}`}
-        style={{ WebkitTapHighlightColor: 'transparent' }}
+        className={`w-full aspect-square touch-none select-none ${disabled ? 'opacity-60' : 'cursor-crosshair'}`}
+        style={{ maxWidth: `${Math.round(scale * 384)}px`, WebkitTapHighlightColor: 'transparent' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -155,6 +156,7 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
           existingArrows={arrows}
           liveScore={inferScoreFromCoords(dragPoint.x, dragPoint.y, target.modality, target.variant, target.arrowRadius / 2).score}
           color={dotColors[arrows.length % dotColors.length]}
+          scale={scale}
         />
       )}
     </>
