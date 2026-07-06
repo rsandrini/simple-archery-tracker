@@ -226,6 +226,8 @@ export function MarkingScreenClient({ session }: Props) {
           distance={distance}
           targetVariant={targetVariant}
           isWalkUp={isWalkUp}
+          currentTotal={runningTotal + currentEndTotal}
+          maxTotal={maxTotal}
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
