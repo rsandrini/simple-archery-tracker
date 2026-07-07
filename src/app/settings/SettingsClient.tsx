@@ -9,11 +9,10 @@ import { TargetRings } from '@/components/target/TargetRings'
 import { ArrowDot } from '@/components/target/ArrowDot'
 
 const PREVIEW_TARGET = getTargetDef('INDOOR', '1-SPOT')
-// Sample arrows placed on the 1-spot (center 100,100, X ring r=8, 5 ring r=15, 4 ring r=30)
+// Sample arrows — viewBox 80 80 40 40 (shows X ring r=8 and 5 ring r=15, blue 4-ring fills the edges)
 const PREVIEW_ARROWS = [
-  { x: 97,  y: 97,  label: 'X', color: '#e74c3c' },  // X ring
-  { x: 110, y: 98,  label: '5', color: '#e67e22' },  // 5 ring
-  { x: 118, y: 115, label: '4', color: '#27ae60' },  // 4 ring
+  { x: 97,  y: 97,  label: 'X', color: '#e74c3c' },  // X ring (dist ≈ 4.2 from center)
+  { x: 109, y: 103, label: '5', color: '#e67e22' },  // 5 ring (dist ≈ 9.5 from center)
 ] as const
 
 interface Props {
@@ -242,7 +241,7 @@ export default function SettingsClient({ user }: Props) {
           />
           {showArrowPreview && (
             <svg
-              viewBox="0 0 200 200"
+              viewBox="80 80 40 40"
               className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
             >
               {PREVIEW_TARGET.spots.map(spot => (
