@@ -8,14 +8,12 @@ import { getTargetDef } from '@/lib/domain/target'
 import { TargetRings } from '@/components/target/TargetRings'
 import { ArrowDot } from '@/components/target/ArrowDot'
 
-const PREVIEW_TARGET = getTargetDef('INDOOR', '5-SPOT')
-// Sample arrows: (x,y) placed to show realistic scoring across all five spots
+const PREVIEW_TARGET = getTargetDef('INDOOR', '1-SPOT')
+// Sample arrows placed on the 1-spot (center 100,100, X ring r=8, 5 ring r=15, 4 ring r=30)
 const PREVIEW_ARROWS = [
-  { x: 43,  y: 40,  label: 'X', color: '#e74c3c' },  // spot 0 — X ring
-  { x: 162, y: 44,  label: '5', color: '#e67e22' },  // spot 1 — 5 ring
-  { x: 99,  y: 98,  label: 'X', color: '#27ae60' },  // spot 2 — X ring
-  { x: 46,  y: 161, label: '5', color: '#2980b9' },  // spot 3 — 5 ring
-  { x: 157, y: 157, label: 'X', color: '#8e44ad' },  // spot 4 — X ring
+  { x: 97,  y: 97,  label: 'X', color: '#e74c3c' },  // X ring
+  { x: 110, y: 98,  label: '5', color: '#e67e22' },  // 5 ring
+  { x: 118, y: 115, label: '4', color: '#27ae60' },  // 4 ring
 ] as const
 
 interface Props {
