@@ -4,6 +4,19 @@ import { useTheme } from '@/lib/context/ThemeContext'
 import { signOut } from 'next-auth/react'
 import { useState } from 'react'
 import Link from 'next/link'
+import { getTargetDef } from '@/lib/domain/target'
+import { TargetRings } from '@/components/target/TargetRings'
+import { ArrowDot } from '@/components/target/ArrowDot'
+
+const PREVIEW_TARGET = getTargetDef('INDOOR', '5-SPOT')
+// Sample arrows: (x,y) placed to show realistic scoring across all five spots
+const PREVIEW_ARROWS = [
+  { x: 43,  y: 40,  label: 'X', color: '#e74c3c' },  // spot 0 — X ring
+  { x: 162, y: 44,  label: '5', color: '#e67e22' },  // spot 1 — 5 ring
+  { x: 99,  y: 98,  label: 'X', color: '#27ae60' },  // spot 2 — X ring
+  { x: 46,  y: 161, label: '5', color: '#2980b9' },  // spot 3 — 5 ring
+  { x: 157, y: 157, label: 'X', color: '#8e44ad' },  // spot 4 — X ring
+] as const
 
 interface Props {
   user: { email: string; name: string; dominantHand: string | null }
@@ -28,6 +41,7 @@ export default function SettingsClient({ user }: Props) {
 
   const [hand, setHand] = useState<string | null>(user.dominantHand)
   const [handMsg, setHandMsg] = useState<Msg | null>(null)
+  const [showArrowPreview, setShowArrowPreview] = useState(false)
 
   const [arrowScale, setArrowScale] = useState<number>(() => {
     if (typeof window === 'undefined') return 1
@@ -212,31 +226,6 @@ export default function SettingsClient({ user }: Props) {
               {Math.round(arrowScale * 100)}%
             </span>
           </div>
-          {/* Live preview — shows actual dot size relative to X and 5 rings */}
-          <div className="flex justify-center">
-            <svg
-              width={140}
-              height={140}
-              viewBox="82 82 36 36"
-              className="rounded-lg border border-gray-200 dark:border-gray-700"
-            >
-              {/* 4-ring fill (blue) as background */}
-              <rect x="82" y="82" width="36" height="36" fill="#2B3990" />
-              {/* 5-ring (white) */}
-              <circle cx="100" cy="100" r="15" fill="#FFFFFF" />
-              {/* X-ring (white, innermost) */}
-              <circle cx="100" cy="100" r="8" fill="#FFFFFF" />
-              {/* Subtle ring borders */}
-              <circle cx="100" cy="100" r="15" fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="0.3" />
-              <circle cx="100" cy="100" r="8"  fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="0.3" />
-              {/* Arrow "X" — placed inside X ring */}
-              <circle cx="99" cy="95" r={3 * arrowScale + 1.5} fill="#e74c3c" stroke="white" strokeWidth={0.8} />
-              <text x="99" y="95" textAnchor="middle" dominantBaseline="central" fontSize={4.5} fontWeight="bold" fill="white" stroke="rgba(0,0,0,0.4)" strokeWidth={0.4} paintOrder="stroke" style={{ userSelect: 'none' }}>X</text>
-              {/* Arrow "5" — placed inside 5 ring */}
-              <circle cx="110" cy="102" r={3 * arrowScale + 1.5} fill="#e67e22" stroke="white" strokeWidth={0.8} />
-              <text x="110" y="102" textAnchor="middle" dominantBaseline="central" fontSize={4.5} fontWeight="bold" fill="white" stroke="rgba(0,0,0,0.4)" strokeWidth={0.4} paintOrder="stroke" style={{ userSelect: 'none' }}>5</text>
-            </svg>
-          </div>
           <input
             type="range"
             min={50}
@@ -244,9 +233,40 @@ export default function SettingsClient({ user }: Props) {
             step={5}
             value={Math.round(arrowScale * 100)}
             onChange={e => handleArrowScaleChange(Number(e.target.value) / 100)}
+            onFocus={() => setShowArrowPreview(true)}
+            onBlur={() => setShowArrowPreview(false)}
+            onMouseDown={() => setShowArrowPreview(true)}
+            onMouseUp={() => setShowArrowPreview(false)}
+            onTouchStart={() => setShowArrowPreview(true)}
+            onTouchEnd={() => setShowArrowPreview(false)}
             className="w-full h-1 accent-blue-500 cursor-pointer"
             aria-label="Arrow dot size"
           />
+          {showArrowPreview && (
+            <svg
+              viewBox="0 0 200 200"
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
+            >
+              {PREVIEW_TARGET.spots.map(spot => (
+                <TargetRings
+                  key={spot.index}
+                  spot={spot}
+                  rings={PREVIEW_TARGET.rings}
+                  background={PREVIEW_TARGET.background}
+                />
+              ))}
+              {PREVIEW_ARROWS.map((a, i) => (
+                <ArrowDot
+                  key={i}
+                  x={a.x}
+                  y={a.y}
+                  label={a.label}
+                  color={a.color}
+                  dotRadius={PREVIEW_TARGET.arrowRadius * arrowScale}
+                />
+              ))}
+            </svg>
+          )}
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Smaller dots make groupings easier to read.
           </p>
