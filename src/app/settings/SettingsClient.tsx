@@ -29,6 +29,18 @@ export default function SettingsClient({ user }: Props) {
   const [hand, setHand] = useState<string | null>(user.dominantHand)
   const [handMsg, setHandMsg] = useState<Msg | null>(null)
 
+  const [arrowScale, setArrowScale] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1
+    const saved = localStorage.getItem('arquearia:arrowScale')
+    const parsed = saved ? parseFloat(saved) : 1
+    return isNaN(parsed) ? 1 : Math.min(1, Math.max(0.5, parsed))
+  })
+
+  function handleArrowScaleChange(value: number) {
+    setArrowScale(value)
+    localStorage.setItem('arquearia:arrowScale', String(value))
+  }
+
   async function handleNameSubmit(e: React.FormEvent) {
     e.preventDefault()
     setNameMsg(null)
@@ -187,6 +199,32 @@ export default function SettingsClient({ user }: Props) {
           >
             ☾ Dark
           </button>
+        </div>
+      </section>
+
+      {/* Targeting */}
+      <section className="space-y-3">
+        <h2 className={sectionHeading}>Targeting</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-700 dark:text-gray-300">Arrow dot size</p>
+            <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+              {Math.round(arrowScale * 100)}%
+            </span>
+          </div>
+          <input
+            type="range"
+            min={50}
+            max={100}
+            step={5}
+            value={Math.round(arrowScale * 100)}
+            onChange={e => handleArrowScaleChange(Number(e.target.value) / 100)}
+            className="w-full h-1 accent-blue-500 cursor-pointer"
+            aria-label="Arrow dot size"
+          />
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Controls the size of arrow dots on the target. Smaller dots make it easier to see groupings.
+          </p>
         </div>
       </section>
 

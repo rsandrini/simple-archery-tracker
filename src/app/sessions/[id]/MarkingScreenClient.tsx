@@ -39,17 +39,13 @@ export function MarkingScreenClient({ session }: Props) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [undoing, setUndoing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [targetScale, setTargetScale] = useState<number>(() => {
+  const [arrowScale] = useState<number>(() => {
     if (typeof window === 'undefined') return 1
-    const saved = localStorage.getItem('arquearia:targetScale')
+    const saved = localStorage.getItem('arquearia:arrowScale')
     const parsed = saved ? parseFloat(saved) : 1
     return isNaN(parsed) ? 1 : Math.min(1, Math.max(0.5, parsed))
   })
 
-  const handleScaleChange = useCallback((value: number) => {
-    setTargetScale(value)
-    localStorage.setItem('arquearia:targetScale', String(value))
-  }, [])
   const savingRef = useRef(false)
   const toastCounter = useRef(0)
 
@@ -249,27 +245,8 @@ export function MarkingScreenClient({ session }: Props) {
               ghostArrows={ghostArrows}
               onArrowPlaced={handleArrowPlaced}
               disabled={saving}
-              scale={targetScale}
+              arrowScale={arrowScale}
             />
-            <div
-              className="flex items-center gap-2 w-full"
-              style={{ maxWidth: `${Math.round(targetScale * 384)}px` }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 dark:text-gray-500 shrink-0">
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="4" />
-              </svg>
-              <input
-                type="range"
-                min={50}
-                max={100}
-                step={5}
-                value={Math.round(targetScale * 100)}
-                onChange={e => handleScaleChange(Number(e.target.value) / 100)}
-                className="flex-1 h-1 accent-blue-500 cursor-pointer"
-                aria-label="Target size"
-              />
-            </div>
             <button
               onClick={handleUndo}
               disabled={undoing || (currentArrows.length === 0 && (prevEnd?.arrows ?? []).length === 0)}
