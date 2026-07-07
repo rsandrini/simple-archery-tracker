@@ -212,6 +212,31 @@ export default function SettingsClient({ user }: Props) {
               {Math.round(arrowScale * 100)}%
             </span>
           </div>
+          {/* Live preview — shows actual dot size relative to X and 5 rings */}
+          <div className="flex justify-center">
+            <svg
+              width={140}
+              height={140}
+              viewBox="82 82 36 36"
+              className="rounded-lg border border-gray-200 dark:border-gray-700"
+            >
+              {/* 4-ring fill (blue) as background */}
+              <rect x="82" y="82" width="36" height="36" fill="#2B3990" />
+              {/* 5-ring (white) */}
+              <circle cx="100" cy="100" r="15" fill="#FFFFFF" />
+              {/* X-ring (white, innermost) */}
+              <circle cx="100" cy="100" r="8" fill="#FFFFFF" />
+              {/* Subtle ring borders */}
+              <circle cx="100" cy="100" r="15" fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="0.3" />
+              <circle cx="100" cy="100" r="8"  fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="0.3" />
+              {/* Arrow "X" — placed inside X ring */}
+              <circle cx="99" cy="95" r={3 * arrowScale + 1.5} fill="#e74c3c" stroke="white" strokeWidth={0.8} />
+              <text x="99" y="95" textAnchor="middle" dominantBaseline="central" fontSize={4.5} fontWeight="bold" fill="white" stroke="rgba(0,0,0,0.4)" strokeWidth={0.4} paintOrder="stroke" style={{ userSelect: 'none' }}>X</text>
+              {/* Arrow "5" — placed inside 5 ring */}
+              <circle cx="110" cy="102" r={3 * arrowScale + 1.5} fill="#e67e22" stroke="white" strokeWidth={0.8} />
+              <text x="110" y="102" textAnchor="middle" dominantBaseline="central" fontSize={4.5} fontWeight="bold" fill="white" stroke="rgba(0,0,0,0.4)" strokeWidth={0.4} paintOrder="stroke" style={{ userSelect: 'none' }}>5</text>
+            </svg>
+          </div>
           <input
             type="range"
             min={50}
@@ -223,7 +248,7 @@ export default function SettingsClient({ user }: Props) {
             aria-label="Arrow dot size"
           />
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Controls the size of arrow dots on the target. Smaller dots make it easier to see groupings.
+            Smaller dots make groupings easier to read.
           </p>
         </div>
       </section>
