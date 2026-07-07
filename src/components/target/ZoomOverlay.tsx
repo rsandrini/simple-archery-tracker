@@ -43,8 +43,7 @@ export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore,
           {/* Crosshair — yellow stays visible on any target colour */}
           <line x1={clickX - 4} y1={clickY} x2={clickX + 4} y2={clickY} stroke="#FACC15" strokeWidth={0.5} strokeLinecap="round" />
           <line x1={clickX} y1={clickY - 4} x2={clickX} y2={clickY + 4} stroke="#FACC15" strokeWidth={0.5} strokeLinecap="round" />
-          {/* Live dot — halved so it doesn't obscure the target in the zoom */}
-          <circle cx={clickX} cy={clickY} r={target.arrowRadius / 2 * arrowScale * 0.5} fill={color} />
+          <circle cx={clickX} cy={clickY} r={target.arrowRadius * arrowScale * 0.5} fill={color} />
           {liveScore && (
             <text
               x={clickX + 6}

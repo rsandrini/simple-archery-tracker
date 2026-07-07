@@ -9,17 +9,17 @@ interface Props {
 }
 
 export function ArrowDot({ x, y, label, color = '#FF4136', dotRadius = ARROW_DOT_RADIUS }: Props) {
-  const r = label ? dotRadius + 1.5 : dotRadius
+  const r = dotRadius
   return (
     <g>
-      <circle cx={x} cy={y} r={r} fill={color} stroke="white" strokeWidth={0.8} />
+      <circle cx={x} cy={y} r={r} fill={color} />
       {label && (
         <text
           x={x}
           y={y}
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={4.5}
+          fontSize={Math.max(r, 4)}
           fontWeight="bold"
           fill="white"
           stroke="rgba(0,0,0,0.4)"

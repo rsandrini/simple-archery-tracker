@@ -39,12 +39,13 @@ export function MarkingScreenClient({ session }: Props) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [undoing, setUndoing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [arrowScale] = useState<number>(() => {
-    if (typeof window === 'undefined') return 1
+  const [arrowScale, setArrowScale] = useState<number>(1)
+
+  useEffect(() => {
     const saved = localStorage.getItem('arquearia:arrowScale')
     const parsed = saved ? parseFloat(saved) : 1
-    return isNaN(parsed) ? 1 : Math.min(1, Math.max(0.5, parsed))
-  })
+    setArrowScale(isNaN(parsed) ? 1 : Math.min(1, Math.max(0.5, parsed)))
+  }, [])
   const [scrollMode, setScrollMode] = useState(false)
 
   const savingRef = useRef(false)

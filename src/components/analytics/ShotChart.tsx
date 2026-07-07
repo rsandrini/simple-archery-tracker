@@ -59,9 +59,9 @@ function OutlierMark({ x, y, r }: { x: number; y: number; r: number }) {
 }
 
 function SingleSpotView({
-  arrows, target, outlierFlags, title,
+  arrows, target, outlierFlags, title, arrowScale = 1,
 }: {
-  arrows: ArrowData[]; target: TargetDef; outlierFlags: Map<string, boolean>; title?: string
+  arrows: ArrowData[]; target: TargetDef; outlierFlags: Map<string, boolean>; title?: string; arrowScale?: number
 }) {
   const spot = target.spots[0]
   const visibleArrows = arrows.filter(a => !outlierFlags.get(a.id))
@@ -88,8 +88,8 @@ function SingleSpotView({
           )}
           {arrows.map(a =>
             outlierFlags.get(a.id)
-              ? <OutlierMark key={a.id} x={a.x} y={a.y} r={target.arrowRadius} />
-              : <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} dotRadius={target.arrowRadius} />
+              ? <OutlierMark key={a.id} x={a.x} y={a.y} r={target.arrowRadius * arrowScale * 0.5} />
+              : <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} dotRadius={target.arrowRadius * arrowScale * 0.5} />
           )}
           <Crosshair x={stats.cx} y={stats.cy} arm={6} />
         </svg>
@@ -114,9 +114,9 @@ function SingleSpotView({
 }
 
 function PerSpotView({
-  arrows, target, outlierFlags, title,
+  arrows, target, outlierFlags, title, arrowScale = 1,
 }: {
-  arrows: ArrowData[]; target: TargetDef; outlierFlags: Map<string, boolean>; title?: string
+  arrows: ArrowData[]; target: TargetDef; outlierFlags: Map<string, boolean>; title?: string; arrowScale?: number
 }) {
   const bySpot = new Map<number, ArrowData[]>()
   for (const a of arrows) {
@@ -156,8 +156,8 @@ function PerSpotView({
                 )}
                 {spotArrows.map(a =>
                   outlierFlags.get(a.id)
-                    ? <OutlierMark key={a.id} x={a.x} y={a.y} r={target.arrowRadius} />
-                    : <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} dotRadius={target.arrowRadius} />
+                    ? <OutlierMark key={a.id} x={a.x} y={a.y} r={target.arrowRadius * arrowScale * 0.5} />
+                    : <ArrowDot key={a.id} x={a.x} y={a.y} color={scoreToColor(a.score)} dotRadius={target.arrowRadius * arrowScale * 0.5} />
                 )}
                 <Crosshair x={stats.cx} y={stats.cy} arm={3} w={0.6} />
               </svg>
@@ -177,9 +177,10 @@ function PerSpotView({
 interface ShotChartProps {
   session: SessionData
   outlierFlags?: Map<string, boolean>
+  arrowScale?: number
 }
 
-export function ShotChart({ session, outlierFlags = new Map() }: ShotChartProps) {
+export function ShotChart({ session, outlierFlags = new Map(), arrowScale = 1 }: ShotChartProps) {
   const allArrows = session.ends.flatMap(e => e.arrows)
   if (allArrows.length === 0) return null
 
@@ -198,6 +199,7 @@ export function ShotChart({ session, outlierFlags = new Map() }: ShotChartProps)
           arrows={singleArrows}
           target={singleTarget}
           outlierFlags={outlierFlags}
+          arrowScale={arrowScale}
           title={hasBoth ? 'Single-face target (all ends combined)' : undefined}
         />
       )}
@@ -206,6 +208,7 @@ export function ShotChart({ session, outlierFlags = new Map() }: ShotChartProps)
           arrows={multiArrows}
           target={multiTarget}
           outlierFlags={outlierFlags}
+          arrowScale={arrowScale}
           title={hasBoth ? 'Multi-face target — per spot' : undefined}
         />
       )}

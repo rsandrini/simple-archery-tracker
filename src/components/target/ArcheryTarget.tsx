@@ -130,7 +130,7 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
         {ghostArrows.length > 0 && (
           <g opacity={0.28}>
             {ghostArrows.map(arrow => (
-              <ArrowDot key={arrow.id} x={arrow.x} y={arrow.y} color="#6b7280" dotRadius={target.arrowRadius * arrowScale} />
+              <ArrowDot key={arrow.id} x={arrow.x} y={arrow.y} color="#6b7280" dotRadius={target.arrowRadius * arrowScale * 0.5} />
             ))}
           </g>
         )}
@@ -141,13 +141,14 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
             y={arrow.y}
             color={dotColors[i % dotColors.length]}
             label={arrow.score}
-            dotRadius={target.arrowRadius * arrowScale}
+            dotRadius={target.arrowRadius * arrowScale * 0.5}
           />
         ))}
         {dragPoint && (
           <>
-            <line x1={dragPoint.x - 6} y1={dragPoint.y} x2={dragPoint.x + 6} y2={dragPoint.y} stroke="#FF4136" strokeWidth={0.8} strokeLinecap="round" />
-            <line x1={dragPoint.x} y1={dragPoint.y - 6} x2={dragPoint.x} y2={dragPoint.y + 6} stroke="#FF4136" strokeWidth={0.8} strokeLinecap="round" />
+            <circle cx={dragPoint.x} cy={dragPoint.y} r={target.arrowRadius * arrowScale * 0.5} fill="#FF4136" />
+            <line x1={dragPoint.x - 6 * arrowScale} y1={dragPoint.y} x2={dragPoint.x + 6 * arrowScale} y2={dragPoint.y} stroke="#FF4136" strokeWidth={0.8} strokeLinecap="round" />
+            <line x1={dragPoint.x} y1={dragPoint.y - 6 * arrowScale} x2={dragPoint.x} y2={dragPoint.y + 6 * arrowScale} stroke="#FF4136" strokeWidth={0.8} strokeLinecap="round" />
           </>
         )}
       </svg>

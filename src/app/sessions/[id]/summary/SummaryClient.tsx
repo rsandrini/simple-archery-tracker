@@ -240,11 +240,13 @@ function AnalyticsTab({
   ignoreFliers,
   setIgnoreFliers,
   dominantHand,
+  arrowScale,
 }: {
   session: SessionData
   ignoreFliers: boolean
   setIgnoreFliers: React.Dispatch<React.SetStateAction<boolean>>
   dominantHand: string | null
+  arrowScale: number
 }) {
   const allArrows = session.ends.flatMap(e => e.arrows)
   const flagged = flagOutliers(allArrows)
@@ -285,6 +287,7 @@ function AnalyticsTab({
       <ShotChart
         session={session}
         outlierFlags={ignoreFliers ? new Map(allArrows.map(a => [a.id, outlierFlags.get(a.id) ?? false])) : new Map()}
+        arrowScale={arrowScale}
       />
 
       {/* Stat cards row */}
@@ -332,6 +335,7 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [tab, setTab] = useState<'overview' | 'analytics'>('overview')
   const [ignoreFliers, setIgnoreFliers] = useState(false)
+  const [arrowScale, setArrowScale] = useState(1)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const config = getConfig(session.modality)
@@ -394,6 +398,12 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
   useEffect(() => {
     hydrateSession(session).catch(() => {}) // best-effort; never block the UI
   }, [session.id]) // only re-run if the session ID changes
+
+  useEffect(() => {
+    const saved = localStorage.getItem('arquearia:arrowScale')
+    const parsed = saved ? parseFloat(saved) : 1
+    setArrowScale(isNaN(parsed) ? 1 : Math.min(1, Math.max(0.5, parsed)))
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -498,6 +508,7 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
             ignoreFliers={ignoreFliers}
             setIgnoreFliers={setIgnoreFliers}
             dominantHand={dominantHand}
+            arrowScale={arrowScale}
           />
         )}
       </div>

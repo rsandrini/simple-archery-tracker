@@ -2,7 +2,7 @@
 
 import { useTheme } from '@/lib/context/ThemeContext'
 import { signOut } from 'next-auth/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getTargetDef } from '@/lib/domain/target'
 import { TargetRings } from '@/components/target/TargetRings'
@@ -39,12 +39,13 @@ export default function SettingsClient({ user }: Props) {
   const [handMsg, setHandMsg] = useState<Msg | null>(null)
   const [showArrowPreview, setShowArrowPreview] = useState(false)
 
-  const [arrowScale, setArrowScale] = useState<number>(() => {
-    if (typeof window === 'undefined') return 1
+  const [arrowScale, setArrowScale] = useState<number>(1)
+
+  useEffect(() => {
     const saved = localStorage.getItem('arquearia:arrowScale')
     const parsed = saved ? parseFloat(saved) : 1
-    return isNaN(parsed) ? 1 : Math.min(1, Math.max(0.5, parsed))
-  })
+    setArrowScale(isNaN(parsed) ? 1 : Math.min(1, Math.max(0.5, parsed)))
+  }, [])
 
   function handleArrowScaleChange(value: number) {
     setArrowScale(value)
@@ -252,14 +253,14 @@ export default function SettingsClient({ user }: Props) {
                 />
               ))}
               {PREVIEW_ARROWS.map((a, i) => {
-                const r = PREVIEW_TARGET.arrowRadius * arrowScale * 0.5 + 1.5
+                const r = PREVIEW_TARGET.arrowRadius * arrowScale * 0.5
                 return (
                   <g key={i}>
                     <circle cx={a.x} cy={a.y} r={r} fill={a.color} />
                     <text
                       x={a.x} y={a.y}
                       textAnchor="middle" dominantBaseline="central"
-                      fontSize={4.5} fontWeight="bold"
+                      fontSize={Math.max(r, 4)} fontWeight="bold"
                       fill="white" stroke="rgba(0,0,0,0.4)" strokeWidth={0.4} paintOrder="stroke"
                       style={{ userSelect: 'none' }}
                     >{a.label}</text>
