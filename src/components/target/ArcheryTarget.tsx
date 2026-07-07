@@ -14,9 +14,10 @@ interface Props {
   onArrowPlaced: (inference: ScoreInference & { x: number; y: number }) => void
   disabled?: boolean
   arrowScale?: number
+  scrollMode?: boolean
 }
 
-export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced, disabled, arrowScale = 1 }: Props) {
+export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced, disabled, arrowScale = 1, scrollMode = false }: Props) {
   const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const isDragging = useRef(false)
@@ -84,23 +85,26 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
 
   // Touch events — iOS Safari primary interaction path
   const handleTouchStart = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    if (scrollMode) return
     e.preventDefault()
     const t = e.touches[0]
     if (t) startDrag(t.clientX, t.clientY)
-  }, [startDrag])
+  }, [startDrag, scrollMode])
 
   const handleTouchMove = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    if (scrollMode) return
     e.preventDefault()
     const t = e.touches[0]
     if (t) moveDrag(t.clientX, t.clientY)
-  }, [moveDrag])
+  }, [moveDrag, scrollMode])
 
   const handleTouchEnd = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    if (scrollMode) return
     e.preventDefault()
     const t = e.changedTouches[0]
     if (t) endDrag(t.clientX, t.clientY)
     else cancelDrag()
-  }, [endDrag, cancelDrag])
+  }, [endDrag, cancelDrag, scrollMode])
 
   const dotColors = ['#e74c3c', '#e67e22', '#27ae60', '#2980b9', '#8e44ad']
 
@@ -109,7 +113,7 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
       <svg
         ref={svgRef}
         viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
-        className={`w-full max-w-sm aspect-square touch-none select-none ${disabled ? 'opacity-60' : 'cursor-crosshair'}`}
+        className={`w-full max-w-sm aspect-square select-none ${scrollMode ? 'touch-auto opacity-75' : 'touch-none'} ${disabled ? 'opacity-60' : scrollMode ? '' : 'cursor-crosshair'}`}
         style={{ WebkitTapHighlightColor: 'transparent' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

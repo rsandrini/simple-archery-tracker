@@ -45,6 +45,7 @@ export function MarkingScreenClient({ session }: Props) {
     const parsed = saved ? parseFloat(saved) : 1
     return isNaN(parsed) ? 1 : Math.min(1, Math.max(0.5, parsed))
   })
+  const [scrollMode, setScrollMode] = useState(false)
 
   const savingRef = useRef(false)
   const toastCounter = useRef(0)
@@ -246,7 +247,36 @@ export function MarkingScreenClient({ session }: Props) {
               onArrowPlaced={handleArrowPlaced}
               disabled={saving}
               arrowScale={arrowScale}
+              scrollMode={scrollMode}
             />
+            <div className="w-full max-w-sm flex justify-end">
+              <button
+                onClick={() => setScrollMode(v => !v)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  scrollMode
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                }`}
+                aria-label={scrollMode ? 'Switch to aim mode' : 'Switch to scroll mode'}
+              >
+                {scrollMode ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 5v14M5 12l7-7 7 7" />
+                    </svg>
+                    Scroll
+                  </>
+                ) : (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+                    </svg>
+                    Aim
+                  </>
+                )}
+              </button>
+            </div>
             <button
               onClick={handleUndo}
               disabled={undoing || (currentArrows.length === 0 && (prevEnd?.arrows ?? []).length === 0)}
