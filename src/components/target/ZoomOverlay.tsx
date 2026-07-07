@@ -38,13 +38,13 @@ export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore,
             <TargetRings key={spot.index} spot={spot} rings={target.rings} background={target.background} />
           ))}
           {existingArrows.map((a, i) => (
-            <ArrowDot key={i} x={a.x} y={a.y} dotRadius={target.arrowRadius * arrowScale} />
+            <ArrowDot key={i} x={a.x} y={a.y} dotRadius={target.arrowRadius * arrowScale * 0.5} />
           ))}
           {/* Crosshair — yellow stays visible on any target colour */}
           <line x1={clickX - 4} y1={clickY} x2={clickX + 4} y2={clickY} stroke="#FACC15" strokeWidth={0.5} strokeLinecap="round" />
           <line x1={clickX} y1={clickY - 4} x2={clickX} y2={clickY + 4} stroke="#FACC15" strokeWidth={0.5} strokeLinecap="round" />
           {/* Live dot — halved so it doesn't obscure the target in the zoom */}
-          <circle cx={clickX} cy={clickY} r={target.arrowRadius / 2 * arrowScale} fill={color} />
+          <circle cx={clickX} cy={clickY} r={target.arrowRadius / 2 * arrowScale * 0.5} fill={color} />
           {liveScore && (
             <text
               x={clickX + 6}

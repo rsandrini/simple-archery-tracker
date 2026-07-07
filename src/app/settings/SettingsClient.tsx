@@ -252,7 +252,7 @@ export default function SettingsClient({ user }: Props) {
                 />
               ))}
               {PREVIEW_ARROWS.map((a, i) => {
-                const r = PREVIEW_TARGET.arrowRadius * arrowScale + 1.5
+                const r = PREVIEW_TARGET.arrowRadius * arrowScale * 0.5 + 1.5
                 return (
                   <g key={i}>
                     <circle cx={a.x} cy={a.y} r={r} fill={a.color} />
