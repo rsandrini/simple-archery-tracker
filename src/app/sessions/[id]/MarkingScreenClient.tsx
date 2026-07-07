@@ -252,12 +252,13 @@ export function MarkingScreenClient({ session }: Props) {
             <div className="w-full max-w-sm flex justify-end">
               <button
                 onClick={() => setScrollMode(v => !v)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-2 min-h-[40px] min-w-[40px] rounded-lg text-xs font-medium transition-colors ${
                   scrollMode
                     ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
                     : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
                 }`}
                 aria-label={scrollMode ? 'Switch to aim mode' : 'Switch to scroll mode'}
+                aria-pressed={scrollMode}
               >
                 {scrollMode ? (
                   <>
