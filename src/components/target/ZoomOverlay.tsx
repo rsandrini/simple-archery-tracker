@@ -26,13 +26,13 @@ export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore,
   return (
     // pointer-events: none so all touch/mouse events fall through to the SVG below
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-      <div className="bg-white rounded-2xl shadow-2xl p-3 flex flex-col items-center gap-2">
-        <p className="text-xs font-medium text-gray-500 tracking-wide">Release to place arrow</p>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-3 flex flex-col items-center gap-2">
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">Release to place arrow</p>
         <svg
           width={ZOOM_DISPLAY}
           height={ZOOM_DISPLAY}
           viewBox={`${vx} ${vy} ${ZOOM_WINDOW} ${ZOOM_WINDOW}`}
-          className="border border-gray-200 rounded-lg"
+          className="border border-gray-200 dark:border-gray-700 rounded-lg"
         >
           {target.spots.map(spot => (
             <TargetRings key={spot.index} spot={spot} rings={target.rings} background={target.background} />

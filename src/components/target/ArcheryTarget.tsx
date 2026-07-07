@@ -113,7 +113,7 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
       <svg
         ref={svgRef}
         viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
-        className={`w-full max-w-sm aspect-square select-none ${scrollMode ? 'touch-auto opacity-75' : 'touch-none'} ${disabled ? 'opacity-60' : scrollMode ? '' : 'cursor-crosshair'}`}
+        className={`w-full max-w-sm aspect-square select-none ${scrollMode ? 'touch-auto' : 'touch-none'} ${disabled ? 'opacity-60' : scrollMode ? 'opacity-75' : 'cursor-crosshair'}`}
         style={{ WebkitTapHighlightColor: 'transparent' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
