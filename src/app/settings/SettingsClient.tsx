@@ -6,7 +6,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { getTargetDef } from '@/lib/domain/target'
 import { TargetRings } from '@/components/target/TargetRings'
-import { ArrowDot } from '@/components/target/ArrowDot'
 
 const PREVIEW_TARGET = getTargetDef('INDOOR', '1-SPOT')
 // Sample arrows — viewBox 80 80 40 40 (shows X ring r=8 and 5 ring r=15, blue 4-ring fills the edges)
@@ -241,7 +240,7 @@ export default function SettingsClient({ user }: Props) {
           />
           {showArrowPreview && (
             <svg
-              viewBox="80 80 40 40"
+              viewBox="72 72 56 56"
               className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
             >
               {PREVIEW_TARGET.spots.map(spot => (
@@ -252,16 +251,21 @@ export default function SettingsClient({ user }: Props) {
                   background={PREVIEW_TARGET.background}
                 />
               ))}
-              {PREVIEW_ARROWS.map((a, i) => (
-                <ArrowDot
-                  key={i}
-                  x={a.x}
-                  y={a.y}
-                  label={a.label}
-                  color={a.color}
-                  dotRadius={PREVIEW_TARGET.arrowRadius * arrowScale}
-                />
-              ))}
+              {PREVIEW_ARROWS.map((a, i) => {
+                const r = PREVIEW_TARGET.arrowRadius * arrowScale + 1.5
+                return (
+                  <g key={i}>
+                    <circle cx={a.x} cy={a.y} r={r} fill={a.color} />
+                    <text
+                      x={a.x} y={a.y}
+                      textAnchor="middle" dominantBaseline="central"
+                      fontSize={4.5} fontWeight="bold"
+                      fill="white" stroke="rgba(0,0,0,0.4)" strokeWidth={0.4} paintOrder="stroke"
+                      style={{ userSelect: 'none' }}
+                    >{a.label}</text>
+                  </g>
+                )
+              })}
             </svg>
           )}
           <p className="text-xs text-gray-400 dark:text-gray-500">
