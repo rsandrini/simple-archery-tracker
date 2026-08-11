@@ -4,6 +4,7 @@ import {
   dispersionEllipse, groupCentroid, clockDistribution,
   flagOutliers, suggestPatterns, endConsistency,
   progressionSeries, personalRecords,
+  computeSessionGroupTightness, groupingQuality,
 } from '@/lib/domain/analytics'
 import type { SessionData, ScoreValue, ArrowData } from '@/lib/domain/types'
 
@@ -324,5 +325,80 @@ describe('personalRecords', () => {
     const pr = personalRecords(sessions)
     expect(pr.mostX?.sessionId).toBe('s2')
     expect(pr.mostX?.value).toBe(8)
+  })
+})
+
+describe('computeSessionGroupTightness', () => {
+  it('returns 0 for no arrows', () => {
+    expect(computeSessionGroupTightness([], 'INDOOR')).toBe(0)
+  })
+
+  it('returns 0 for a single arrow (no spread from its own centroid)', () => {
+    expect(computeSessionGroupTightness([{ x: 100, y: 100, spotIndex: null }], 'INDOOR')).toBe(0)
+  })
+
+  it('normalizes single-spot spread by the 1-SPOT radius (Indoor: 84)', () => {
+    // 2 arrows around centroid (100,100), distance 8 each → meanSpread 8, ratio 8/84
+    const arrows = [
+      { x: 92, y: 100, spotIndex: null },
+      { x: 108, y: 100, spotIndex: null },
+    ]
+    expect(computeSessionGroupTightness(arrows, 'INDOOR')).toBeCloseTo(8 / 84, 5)
+  })
+
+  it('weights multi-spot groups by arrow count, not a simple average of ratios', () => {
+    // Spot 0 (Indoor 5-SPOT radius 32): 6 arrows — 2 at (38,42)/(46,42) (dist 4,4 from
+    // centroid 42,42) + 4 sitting exactly at the centroid (dist 0) → meanSpread = 8/6, ratio ≈ 0.041667
+    const spot0 = [
+      { x: 38, y: 42, spotIndex: 0 },
+      { x: 46, y: 42, spotIndex: 0 },
+      { x: 42, y: 42, spotIndex: 0 },
+      { x: 42, y: 42, spotIndex: 0 },
+      { x: 42, y: 42, spotIndex: 0 },
+      { x: 42, y: 42, spotIndex: 0 },
+    ]
+    // Spot 1 (radius 32): 2 arrows at (150,42)/(166,42), centroid (158,42), dist 8 each → ratio 0.25
+    const spot1 = [
+      { x: 150, y: 42, spotIndex: 1 },
+      { x: 166, y: 42, spotIndex: 1 },
+    ]
+    // Weighted: (0.041667*6 + 0.25*2) / 8 = 0.09375 — NOT the simple average (0.145833)
+    expect(computeSessionGroupTightness([...spot0, ...spot1], 'INDOOR')).toBeCloseTo(0.09375, 5)
+  })
+
+  it('normalizes each group by its own target type when 1-spot and 4-spot arrows are mixed in one session (Flint)', () => {
+    // Single-spot group (Flint 1-SPOT radius 80): 2 arrows, centroid (100,100), dist 8 each → ratio 0.1
+    const singleGroup = [
+      { x: 92, y: 100, spotIndex: null },
+      { x: 108, y: 100, spotIndex: null },
+    ]
+    // Multi-spot group (Flint 4-SPOT radius 40): 2 arrows, centroid (50,50), dist 6 each → ratio 0.15
+    const multiGroup = [
+      { x: 44, y: 50, spotIndex: 0 },
+      { x: 56, y: 50, spotIndex: 0 },
+    ]
+    // Weighted (2 and 2, equal counts): (0.1*2 + 0.15*2) / 4 = 0.125
+    expect(computeSessionGroupTightness([...singleGroup, ...multiGroup], 'FLINT')).toBeCloseTo(0.125, 5)
+  })
+})
+
+describe('groupingQuality', () => {
+  it('classifies tight (< 0.12)', () => {
+    expect(groupingQuality(0.05)).toBe('tight')
+  })
+
+  it('classifies good (0.12 to < 0.28)', () => {
+    expect(groupingQuality(0.12)).toBe('good')
+    expect(groupingQuality(0.20)).toBe('good')
+  })
+
+  it('classifies moderate (0.28 to < 0.50)', () => {
+    expect(groupingQuality(0.28)).toBe('moderate')
+    expect(groupingQuality(0.40)).toBe('moderate')
+  })
+
+  it('classifies spread (>= 0.50)', () => {
+    expect(groupingQuality(0.50)).toBe('spread')
+    expect(groupingQuality(0.90)).toBe('spread')
   })
 })
