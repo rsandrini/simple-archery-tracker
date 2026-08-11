@@ -1,5 +1,6 @@
 import prisma from '@/lib/db/prisma'
 import type { SessionData } from '@/lib/domain/types'
+import { computeSessionGroupTightness } from '@/lib/domain/analytics'
 
 type PrismaSession = NonNullable<Awaited<ReturnType<typeof fetchSession>>>
 
@@ -43,14 +44,6 @@ export async function getSessionForUser(id: string, userId: string) {
   return fetchSession(id, userId)
 }
 
-function computeMeanSpread(arrows: { x: number; y: number }[]): number {
-  if (arrows.length === 0) return 0
-  const cx = arrows.reduce((s, a) => s + a.x, 0) / arrows.length
-  const cy = arrows.reduce((s, a) => s + a.y, 0) / arrows.length
-  const dists = arrows.map(a => Math.hypot(a.x - cx, a.y - cy))
-  return dists.reduce((s, d) => s + d, 0) / (dists.length || 1)
-}
-
 function computeEndConsistency(ends: { arrows: { points: number }[] }[]): number {
   if (ends.length < 2) return 0
   const pts = ends.map(e => e.arrows.reduce((s, a) => s + a.points, 0))
@@ -75,7 +68,7 @@ export async function getProgressionData(userId: string) {
     const total = allArrows.reduce((sum, a) => sum + a.points, 0)
     const totalX = allArrows.filter(a => a.isX).length
     const bestEnd = Math.max(0, ...s.ends.map(e => e.arrows.reduce((sum, a) => sum + a.points, 0)))
-    const meanSpread = computeMeanSpread(allArrows)
+    const groupTightness = computeSessionGroupTightness(allArrows, s.modality as 'INDOOR' | 'FLINT')
     const consistency = computeEndConsistency(s.ends)
     return {
       id: s.id,
@@ -84,7 +77,7 @@ export async function getProgressionData(userId: string) {
       total,
       totalX,
       bestEnd,
-      meanSpread,
+      groupTightness,
       consistency,
     }
   })

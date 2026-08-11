@@ -146,20 +146,20 @@ export function endConsistency(session: SessionData): number {
 }
 
 export function progressionSeries(
-  sessions: { modality: Modality; createdAt: string; total: number; meanSpread: number }[],
+  sessions: { modality: Modality; createdAt: string; total: number; groupTightness: number }[],
   metric: 'score' | 'groupRadius'
 ): ProgressionPoint[] {
   return [...sessions]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .map(s => ({
       date: s.createdAt,
-      value: metric === 'score' ? s.total : s.meanSpread,
+      value: metric === 'score' ? s.total : s.groupTightness,
       modality: s.modality,
     }))
 }
 
 export function personalRecords(
-  sessions: { id: string; modality: Modality; createdAt: string; total: number; meanSpread: number; bestEnd: number; totalX: number }[]
+  sessions: { id: string; modality: Modality; createdAt: string; total: number; groupTightness: number; bestEnd: number; totalX: number }[]
 ): PersonalRecords {
   function bestOf(
     filtered: typeof sessions,
@@ -178,7 +178,7 @@ export function personalRecords(
     bestScoreIndoor: bestOf(indoor, s => s.total, 'max'),
     bestScoreFlint: bestOf(flint, s => s.total, 'max'),
     bestEnd: bestOf(sessions, s => s.bestEnd, 'max'),
-    tightestGroup: bestOf(sessions.filter(s => s.meanSpread > 0), s => s.meanSpread, 'min'),
+    tightestGroup: bestOf(sessions.filter(s => s.groupTightness > 0), s => s.groupTightness, 'min'),
     mostX: bestOf(sessions, s => s.totalX, 'max'),
   }
 }

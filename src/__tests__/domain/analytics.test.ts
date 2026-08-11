@@ -255,9 +255,9 @@ describe('endConsistency', () => {
 
 describe('progressionSeries', () => {
   const sessions = [
-    { modality: 'INDOOR' as const, createdAt: '2026-03-01T00:00:00Z', total: 220, meanSpread: 8.2 },
-    { modality: 'FLINT' as const,  createdAt: '2026-02-01T00:00:00Z', total: 180, meanSpread: 12.1 },
-    { modality: 'INDOOR' as const, createdAt: '2026-01-01T00:00:00Z', total: 210, meanSpread: 9.5 },
+    { modality: 'INDOOR' as const, createdAt: '2026-03-01T00:00:00Z', total: 220, groupTightness: 8.2 },
+    { modality: 'FLINT' as const,  createdAt: '2026-02-01T00:00:00Z', total: 180, groupTightness: 12.1 },
+    { modality: 'INDOOR' as const, createdAt: '2026-01-01T00:00:00Z', total: 210, groupTightness: 9.5 },
   ]
 
   it('returns empty for empty input', () => {
@@ -275,7 +275,7 @@ describe('progressionSeries', () => {
     expect(result[2].value).toBe(220)
   })
 
-  it('returns meanSpread for groupRadius metric', () => {
+  it('returns groupTightness for groupRadius metric', () => {
     const result = progressionSeries(sessions, 'groupRadius')
     expect(result[0].value).toBeCloseTo(9.5)
   })
@@ -283,9 +283,9 @@ describe('progressionSeries', () => {
 
 describe('personalRecords', () => {
   const sessions = [
-    { id: 's1', modality: 'INDOOR' as const, createdAt: '2026-01-01T00:00:00Z', total: 220, meanSpread: 8.2, bestEnd: 27, totalX: 5 },
-    { id: 's2', modality: 'INDOOR' as const, createdAt: '2026-02-01T00:00:00Z', total: 235, meanSpread: 6.1, bestEnd: 30, totalX: 8 },
-    { id: 's3', modality: 'FLINT' as const,  createdAt: '2026-03-01T00:00:00Z', total: 180, meanSpread: 12.0, bestEnd: 24, totalX: 2 },
+    { id: 's1', modality: 'INDOOR' as const, createdAt: '2026-01-01T00:00:00Z', total: 220, groupTightness: 8.2, bestEnd: 27, totalX: 5 },
+    { id: 's2', modality: 'INDOOR' as const, createdAt: '2026-02-01T00:00:00Z', total: 235, groupTightness: 6.1, bestEnd: 30, totalX: 8 },
+    { id: 's3', modality: 'FLINT' as const,  createdAt: '2026-03-01T00:00:00Z', total: 180, groupTightness: 12.0, bestEnd: 24, totalX: 2 },
   ]
 
   it('returns all null for empty input', () => {
@@ -315,7 +315,7 @@ describe('personalRecords', () => {
     expect(pr.bestEnd?.value).toBe(30)
   })
 
-  it('picks tightest group (lowest meanSpread)', () => {
+  it('picks tightest group (lowest groupTightness)', () => {
     const pr = personalRecords(sessions)
     expect(pr.tightestGroup?.sessionId).toBe('s2')
     expect(pr.tightestGroup?.value).toBeCloseTo(6.1)

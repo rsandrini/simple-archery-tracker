@@ -3,7 +3,8 @@
 import { ArrowDot } from '@/components/target/ArrowDot'
 import { TargetRings } from '@/components/target/TargetRings'
 import { getTargetDef, SVG_SIZE } from '@/lib/domain/target'
-import { dispersionEllipse } from '@/lib/domain/analytics'
+import { dispersionEllipse, groupingQuality } from '@/lib/domain/analytics'
+import type { GroupingTier } from '@/lib/domain/analytics'
 import type { ArrowData, ScoreValue, SessionData, TargetDef } from '@/lib/domain/types'
 
 const SCORE_COLORS: Record<ScoreValue, string> = {
@@ -21,12 +22,15 @@ function groupStats(arrows: ArrowData[], spotCx: number, spotCy: number) {
   return { cx, cy, meanSpread, offset: Math.hypot(cx - spotCx, cy - spotCy) }
 }
 
+const TIER_LABELS: Record<GroupingTier, { label: string; cls: string }> = {
+  tight:    { label: 'Tight',    cls: 'text-green-600 dark:text-green-400' },
+  good:     { label: 'Good',     cls: 'text-blue-600 dark:text-blue-400' },
+  moderate: { label: 'Moderate', cls: 'text-yellow-600 dark:text-yellow-400' },
+  spread:   { label: 'Spread',   cls: 'text-red-500 dark:text-red-400' },
+}
+
 function qualityInfo(meanSpread: number, refRadius: number) {
-  const p = meanSpread / refRadius
-  if (p < 0.12) return { label: 'Tight',    cls: 'text-green-600 dark:text-green-400' }
-  if (p < 0.28) return { label: 'Good',     cls: 'text-blue-600 dark:text-blue-400' }
-  if (p < 0.50) return { label: 'Moderate', cls: 'text-yellow-600 dark:text-yellow-400' }
-  return           { label: 'Spread',    cls: 'text-red-500 dark:text-red-400' }
+  return TIER_LABELS[groupingQuality(meanSpread / refRadius)]
 }
 
 function aimDirection(cx: number, cy: number, spotCx = 100, spotCy = 100): string {
