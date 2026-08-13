@@ -1,4 +1,5 @@
 import db from '@/lib/db/local'
+import { analytics } from '@/lib/monitoring/posthog-client'
 
 let running = false
 
@@ -135,6 +136,9 @@ export async function flushQueue(): Promise<{ synced: number; failed: number }> 
   } finally {
     running = false
   }
+
+  if (synced > 0) analytics.capture('sync_queue_flushed', { itemCount: synced })
+  if (failed > 0) analytics.capture('sync_queue_failed', { itemCount: failed })
 
   return { synced, failed }
 }
