@@ -20,10 +20,24 @@ const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
   ? process.env.ALLOWED_DEV_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
   : []
 
+// PostHog reverse proxy — routes ingestion through this app's own origin so
+// ad-blockers don't silently drop usage events. Host pair must match the
+// region NEXT_PUBLIC_POSTHOG_HOST points at (US default, or EU).
+const posthogRegion = (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? '').includes('eu.') ? 'eu' : 'us'
+const posthogIngestHost = `https://${posthogRegion}.i.posthog.com`
+const posthogAssetHost = `https://${posthogRegion}-assets.i.posthog.com`
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   allowedDevOrigins,
   serverExternalPackages: ['@prisma/client', '@prisma/adapter-better-sqlite3', 'better-sqlite3', 'pino', 'pino-pretty', 'thread-stream'],
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    return [
+      { source: '/ingest/static/:path*', destination: `${posthogAssetHost}/static/:path*` },
+      { source: '/ingest/:path*', destination: `${posthogIngestHost}/:path*` },
+    ]
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },
