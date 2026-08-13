@@ -13,7 +13,7 @@ interface SessionPoint {
   modality: Modality
   createdAt: string
   total: number
-  meanSpread: number
+  groupTightness: number
 }
 
 interface Props {
@@ -22,6 +22,7 @@ interface Props {
 
 export function ProgressionChart({ sessions }: Props) {
   const [metric, setMetric] = useState<'score' | 'groupRadius'>('score')
+  const isGroup = metric === 'groupRadius'
 
   const allPoints = progressionSeries(sessions, metric)
   const indoorPoints = progressionSeries(sessions.filter(s => s.modality === 'INDOOR'), metric)
@@ -33,12 +34,17 @@ export function ProgressionChart({ sessions }: Props) {
     const indoor = indoorPoints.find(p => p.date === date)
     const flint = flintPoints.find(p => p.date === date)
     const label = new Date(date).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })
-    return { date: label, indoor: indoor?.value, flint: flint?.value }
+    const scale = isGroup ? 100 : 1
+    return {
+      date: label,
+      indoor: indoor ? indoor.value * scale : undefined,
+      flint: flint ? flint.value * scale : undefined,
+    }
   })
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-1">
         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Progression</h3>
         <div className="flex gap-1">
           {(['score', 'groupRadius'] as const).map(m => (
@@ -56,12 +62,28 @@ export function ProgressionChart({ sessions }: Props) {
           ))}
         </div>
       </div>
+      {isGroup && (
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+          Lower % = tighter grouping (spread as % of target size)
+        </p>
+      )}
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} />
-          <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+          <YAxis
+            tick={{ fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(v: number) => isGroup ? `${Math.round(v)}%` : `${v}`}
+          />
+          <Tooltip
+            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+            formatter={(value) => {
+              const rounded = Math.round(Number(value) * 100) / 100
+              return isGroup ? `${rounded}%` : rounded
+            }}
+          />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Line
             type="monotone" dataKey="indoor" name="Indoor"

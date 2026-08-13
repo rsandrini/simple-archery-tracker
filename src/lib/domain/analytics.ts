@@ -1,4 +1,5 @@
-import type { SessionData, ScoreValue, ArrowData, Modality, ClockSector, DominantHand, Hint, PREntry, PersonalRecords, ProgressionPoint } from './types'
+import type { SessionData, ScoreValue, ArrowData, Modality, TargetVariant, ClockSector, DominantHand, Hint, PREntry, PersonalRecords, ProgressionPoint } from './types'
+import { getTargetDef } from './target'
 
 const SCORE_VALUES: ScoreValue[] = ['X', '5', '4', '3', '2', '1', 'M']
 
@@ -145,20 +146,20 @@ export function endConsistency(session: SessionData): number {
 }
 
 export function progressionSeries(
-  sessions: { modality: Modality; createdAt: string; total: number; meanSpread: number }[],
+  sessions: { modality: Modality; createdAt: string; total: number; groupTightness: number }[],
   metric: 'score' | 'groupRadius'
 ): ProgressionPoint[] {
   return [...sessions]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .map(s => ({
       date: s.createdAt,
-      value: metric === 'score' ? s.total : s.meanSpread,
+      value: metric === 'score' ? s.total : s.groupTightness,
       modality: s.modality,
     }))
 }
 
 export function personalRecords(
-  sessions: { id: string; modality: Modality; createdAt: string; total: number; meanSpread: number; bestEnd: number; totalX: number }[]
+  sessions: { id: string; modality: Modality; createdAt: string; total: number; groupTightness: number; bestEnd: number; totalX: number }[]
 ): PersonalRecords {
   function bestOf(
     filtered: typeof sessions,
@@ -177,7 +178,48 @@ export function personalRecords(
     bestScoreIndoor: bestOf(indoor, s => s.total, 'max'),
     bestScoreFlint: bestOf(flint, s => s.total, 'max'),
     bestEnd: bestOf(sessions, s => s.bestEnd, 'max'),
-    tightestGroup: bestOf(sessions.filter(s => s.meanSpread > 0), s => s.meanSpread, 'min'),
+    tightestGroup: bestOf(sessions.filter(s => s.groupTightness > 0), s => s.groupTightness, 'min'),
     mostX: bestOf(sessions, s => s.totalX, 'max'),
   }
+}
+
+export function computeSessionGroupTightness(
+  arrows: { x: number; y: number; spotIndex: number | null | undefined }[],
+  modality: Modality
+): number {
+  if (arrows.length === 0) return 0
+
+  const groups = new Map<string, { x: number; y: number }[]>()
+  for (const a of arrows) {
+    const key = a.spotIndex == null ? 'single' : `multi-${a.spotIndex}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push({ x: a.x, y: a.y })
+  }
+
+  const multiVariant: TargetVariant = modality === 'INDOOR' ? '5-SPOT' : '4-SPOT'
+  const singleRadius = getTargetDef(modality, '1-SPOT').spots[0].spotRadius
+  const multiRadius = getTargetDef(modality, multiVariant).spots[0].spotRadius
+
+  let weightedSum = 0
+  let totalCount = 0
+
+  for (const [key, pts] of groups) {
+    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length
+    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length
+    const meanSpread = pts.reduce((s, p) => s + Math.hypot(p.x - cx, p.y - cy), 0) / pts.length
+    const refRadius = key === 'single' ? singleRadius : multiRadius
+    weightedSum += (meanSpread / refRadius) * pts.length
+    totalCount += pts.length
+  }
+
+  return totalCount === 0 ? 0 : weightedSum / totalCount
+}
+
+export type GroupingTier = 'tight' | 'good' | 'moderate' | 'spread'
+
+export function groupingQuality(ratio: number): GroupingTier {
+  if (ratio < 0.12) return 'tight'
+  if (ratio < 0.28) return 'good'
+  if (ratio < 0.50) return 'moderate'
+  return 'spread'
 }

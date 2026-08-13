@@ -9,7 +9,7 @@ interface SessionRow {
   total: number
   totalX: number
   bestEnd: number
-  meanSpread: number
+  groupTightness: number
   consistency: number
 }
 
@@ -25,7 +25,7 @@ function PRCard({ label, entry, unit }: { label: string; entry: PREntry | null; 
     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
       <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{label}</p>
       <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-        {unit === 'radius' ? entry.value.toFixed(1) : entry.value}
+        {unit === 'percent' ? `${(entry.value * 100).toFixed(1)}%` : entry.value}
       </p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{date}</p>
     </div>
@@ -67,7 +67,7 @@ export async function ProgressSection({ sessions }: Props) {
           <PRCard label="Best Indoor" entry={pr.bestScoreIndoor} />
           <PRCard label="Best Flint" entry={pr.bestScoreFlint} />
           <PRCard label="Best end" entry={pr.bestEnd} />
-          <PRCard label="Tightest group" entry={pr.tightestGroup} unit="radius" />
+          <PRCard label="Tightest group" entry={pr.tightestGroup} unit="percent" />
         </div>
         <div className="mt-3">
           <PRCard label="Most Xs in a session" entry={pr.mostX} />
