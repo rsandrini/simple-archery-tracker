@@ -18,6 +18,7 @@ import { ClockChart } from '@/components/analytics/ClockChart'
 import { PatternHints } from '@/components/analytics/PatternHints'
 import type { DominantHand } from '@/lib/domain/types'
 import { hydrateSession } from '@/lib/sync/hydrate'
+import { analytics } from '@/lib/monitoring/posthog-client'
 
 interface Props {
   session: SessionData
@@ -398,6 +399,10 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
   useEffect(() => {
     hydrateSession(session).catch(() => {}) // best-effort; never block the UI
   }, [session.id]) // only re-run if the session ID changes
+
+  useEffect(() => {
+    analytics.capture('summary_viewed', { modality: session.modality })
+  }, [session.id, session.modality])
 
   useEffect(() => {
     const saved = localStorage.getItem('arquearia:arrowScale')
