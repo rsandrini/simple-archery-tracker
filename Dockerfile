@@ -2,7 +2,7 @@
 FROM node:20-slim AS deps
 WORKDIR /app
 RUN apt-get update && apt-get install -y python3 make g++ openssl && rm -rf /var/lib/apt/lists/*
-COPY package*.json ./
+COPY package*.json .npmrc ./
 RUN npm ci
 
 # Stage 2: build
