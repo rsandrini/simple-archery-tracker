@@ -2,6 +2,7 @@ import db from '@/lib/db/local'
 import { api } from '@/lib/api/client'
 import type { ScoreValue, Modality, TargetVariant } from '@/lib/domain/types'
 import { scoreToPoints, isX } from '@/lib/domain/scoring'
+import { scheduleFlush } from '@/lib/sync/manager'
 
 function isOnline() {
   return typeof navigator === 'undefined' || navigator.onLine
@@ -15,6 +16,7 @@ async function enqueue(method: 'POST' | 'PATCH' | 'DELETE', url: string, body: u
     createdAt: new Date().toISOString(),
     retries: 0,
   })
+  scheduleFlush()
 }
 
 export const offlineApi = {

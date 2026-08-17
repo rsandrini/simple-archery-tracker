@@ -16,18 +16,24 @@ interface Props {
   liveScore?: string
   color?: string
   arrowScale?: number
+  awaitingConfirm?: boolean
+  onConfirm?: () => void
+  onRedo?: () => void
 }
 
-export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore, color = '#FF4136', arrowScale = 1 }: Props) {
+export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore, color = '#FF4136', arrowScale = 1, awaitingConfirm = false, onConfirm, onRedo }: Props) {
   const half = ZOOM_WINDOW / 2
   const vx = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickX - half))
   const vy = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickY - half))
 
   return (
-    // pointer-events: none so all touch/mouse events fall through to the SVG below
+    // pointer-events: none so all touch/mouse events fall through to the SVG below —
+    // except the Confirm/Redo buttons, which opt back in individually so they stay tappable.
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-3 flex flex-col items-center gap-2">
-        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">Release to place arrow</p>
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">
+          {awaitingConfirm ? 'Last arrow of the session — confirm to save' : 'Release to place arrow'}
+        </p>
         <svg
           width={ZOOM_DISPLAY}
           height={ZOOM_DISPLAY}
@@ -62,6 +68,24 @@ export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore,
             </text>
           )}
         </svg>
+        {awaitingConfirm && (
+          <div className="flex gap-2 w-full pointer-events-auto">
+            <button
+              type="button"
+              onClick={onRedo}
+              className="flex-1 py-2 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              Redo
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="flex-1 py-2 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+            >
+              Confirm {liveScore ? `(${liveScore})` : ''}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

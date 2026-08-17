@@ -81,6 +81,12 @@ export function MarkingScreenClient({ session }: Props) {
   const isSessionComplete =
     ends.filter(e => e.arrows.length === config.arrowsPerEnd).length >= config.totalEnds
 
+  // The session's very last arrow saves and immediately navigates to Summary,
+  // which has no way back to fix the arrow's position — require an explicit
+  // confirm step for that one arrow instead of the usual instant-save.
+  const isSessionFinalArrow =
+    currentEndIndex + 1 >= config.totalEnds && currentArrowIndex + 1 >= config.arrowsPerEnd
+
   function addToast(message: string) {
     const id = ++toastCounter.current
     setToasts(prev => [...prev, { id, message }])
@@ -249,6 +255,7 @@ export function MarkingScreenClient({ session }: Props) {
               disabled={saving}
               arrowScale={arrowScale}
               scrollMode={scrollMode}
+              requireConfirmation={isSessionFinalArrow}
             />
             <div className="w-full max-w-sm flex justify-end">
               <button

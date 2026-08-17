@@ -8,6 +8,7 @@ import { getAuthenticatedUserId } from '@/lib/auth-utils'
 import { APP_VERSION } from '@/lib/version'
 import { getProgressionData } from '@/lib/db/session-queries'
 import { ProgressSection } from '@/components/analytics/ProgressSection'
+import { getConfig } from '@/lib/domain/rounds'
 
 const PAGE_SIZE = 5
 
@@ -28,7 +29,10 @@ export default async function HomePage({
     prisma.session.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-      include: { _count: { select: { ends: true } } },
+      include: {
+        _count: { select: { ends: true } },
+        ends: { include: { arrows: { select: { points: true } } } },
+      },
       take: PAGE_SIZE,
       skip,
     }),
@@ -82,18 +86,28 @@ export default async function HomePage({
         ) : (
           <>
             <ul className="space-y-3">
-              {sessions.map(s => (
-                <li key={s.id}>
-                  <SessionCard
-                    id={s.id}
-                    modality={s.modality}
-                    targetVariant={s.targetVariant}
-                    createdAt={s.createdAt.toISOString()}
-                    endCount={s._count.ends}
-                    rating={s.rating}
-                  />
-                </li>
-              ))}
+              {sessions.map(s => {
+                const totalPoints = s.ends.reduce(
+                  (sum, e) => sum + e.arrows.reduce((eSum, a) => eSum + a.points, 0),
+                  0
+                )
+                const sessionConfig = getConfig(s.modality)
+                const maxPoints = sessionConfig.totalEnds * sessionConfig.arrowsPerEnd * 5
+                return (
+                  <li key={s.id}>
+                    <SessionCard
+                      id={s.id}
+                      modality={s.modality}
+                      targetVariant={s.targetVariant}
+                      createdAt={s.createdAt.toISOString()}
+                      endCount={s._count.ends}
+                      rating={s.rating}
+                      totalPoints={totalPoints}
+                      maxPoints={maxPoints}
+                    />
+                  </li>
+                )
+              })}
             </ul>
 
             {totalPages > 1 && (
