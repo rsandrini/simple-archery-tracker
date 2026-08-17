@@ -159,7 +159,9 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
           clickY={dragPoint.y}
           target={target}
           existingArrows={arrows}
-          liveScore={inferScoreFromCoords(dragPoint.x, dragPoint.y, target.modality, target.variant, target.arrowRadius / 2).score}
+          // Must match endDrag's inferScoreFromCoords call exactly (same args, no override) —
+          // otherwise the live badge can show a different score than what gets saved on release.
+          liveScore={inferScoreFromCoords(dragPoint.x, dragPoint.y, target.modality, target.variant).score}
           color={dotColors[arrows.length % dotColors.length]}
           arrowScale={arrowScale}
         />
