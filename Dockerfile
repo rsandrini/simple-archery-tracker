@@ -14,7 +14,24 @@ RUN npx prisma generate
 # AUTH_SECRET is required by NextAuth at build time (page data collection).
 # This dummy value is only used during the build — runtime value comes from compose env.
 ARG AUTH_SECRET=build-time-placeholder
-RUN AUTH_SECRET=$AUTH_SECRET npm run build
+# NEXT_PUBLIC_* vars are inlined into the client bundle at build time; SENTRY_ORG/
+# PROJECT/AUTH_TOKEN are read by withSentryConfig for source map upload during
+# `next build`. All six must be build args — setting them later in docker-compose's
+# `environment:` block has no effect on a client bundle that's already been built.
+ARG SENTRY_ORG=""
+ARG SENTRY_PROJECT=""
+ARG SENTRY_AUTH_TOKEN=""
+ARG NEXT_PUBLIC_SENTRY_DSN=""
+ARG NEXT_PUBLIC_POSTHOG_KEY=""
+ARG NEXT_PUBLIC_POSTHOG_HOST=""
+RUN AUTH_SECRET=$AUTH_SECRET \
+    SENTRY_ORG=$SENTRY_ORG \
+    SENTRY_PROJECT=$SENTRY_PROJECT \
+    SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN \
+    NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN \
+    NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY \
+    NEXT_PUBLIC_POSTHOG_HOST=$NEXT_PUBLIC_POSTHOG_HOST \
+    npm run build
 
 # Stage 3: production runner
 FROM node:20-slim AS runner

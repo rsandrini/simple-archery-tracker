@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getTargetDef } from '@/lib/domain/target'
 import { TargetRings } from '@/components/target/TargetRings'
+import { analytics } from '@/lib/monitoring/posthog-client'
 
 const PREVIEW_TARGET = getTargetDef('INDOOR', '1-SPOT')
 // Sample arrows — viewBox 80 80 40 40 (shows X ring r=8 and 5 ring r=15, blue 4-ring fills the edges)
@@ -50,6 +51,7 @@ export default function SettingsClient({ user }: Props) {
   function handleArrowScaleChange(value: number) {
     setArrowScale(value)
     localStorage.setItem('arquearia:arrowScale', String(value))
+    analytics.capture('settings_changed', { field: 'arrowSize' })
   }
 
   async function handleNameSubmit(e: React.FormEvent) {
