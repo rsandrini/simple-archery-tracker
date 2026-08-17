@@ -25,6 +25,7 @@
     "prisma": "^7.9.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-is": "^19.2.8",
     "recharts": "^3.8.1",
     "serwist": "^9.5.11"
   },
