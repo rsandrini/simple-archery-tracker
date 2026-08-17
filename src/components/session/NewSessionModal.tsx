@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { api } from '@/lib/api/client'
+import { analytics } from '@/lib/monitoring/posthog-client'
 import type { Modality, TargetVariant } from '@/lib/domain/types'
 
 interface Props {
@@ -26,6 +27,7 @@ export function NewSessionModal({ open, onClose }: Props) {
     try {
       const variant = modality === 'FLINT' ? '1-SPOT' : targetVariant
       const session = await api.sessions.create(modality, variant) as { id: string }
+      analytics.capture('session_created', { modality, targetVariant: variant })
       onClose()
       router.push(`/sessions/${session.id}`)
     } finally {
