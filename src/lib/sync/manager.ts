@@ -142,3 +142,79 @@ export async function flushQueue(): Promise<{ synced: number; failed: number }> 
 export function pendingCount(): Promise<number> {
   return db.mutations.count()
 }
+
+// ─── Reactive retry scheduler ────────────────────────────────────────────
+//
+// A save can fail while the browser still thinks it's online (flaky signal,
+// server hiccup) — that mutation gets queued but nothing else would ever
+// retry it until the user reloads or toggles connectivity. scheduleFlush()
+// gives the queue its own retry loop: fires (almost) immediately, then backs
+// off exponentially while attempts keep failing, and resets to the fast
+// retry the moment new work shows up or an attempt makes progress.
+
+const RETRY_BASE_MS = 2000
+const RETRY_MAX_MS = 20000
+
+type PendingListener = (pending: number) => void
+type SyncingListener = (syncing: boolean) => void
+
+const pendingListeners = new Set<PendingListener>()
+const syncingListeners = new Set<SyncingListener>()
+
+let retryDelay = RETRY_BASE_MS
+let retryTimer: ReturnType<typeof setTimeout> | null = null
+let attemptInFlight = false
+
+export function onPendingChange(cb: PendingListener): () => void {
+  pendingListeners.add(cb)
+  return () => pendingListeners.delete(cb)
+}
+
+export function onSyncingChange(cb: SyncingListener): () => void {
+  syncingListeners.add(cb)
+  return () => syncingListeners.delete(cb)
+}
+
+async function emitPending() {
+  const count = await pendingCount()
+  pendingListeners.forEach(l => l(count))
+}
+
+function emitSyncing(syncing: boolean) {
+  syncingListeners.forEach(l => l(syncing))
+}
+
+/** Trigger (or fast-track) a retry pass over the queue. Safe to call often — idempotent while an attempt is already in flight. */
+export function scheduleFlush(): void {
+  retryDelay = RETRY_BASE_MS
+  if (retryTimer) {
+    clearTimeout(retryTimer)
+    retryTimer = null
+  }
+  void emitPending()
+  if (attemptInFlight) return
+  void runRetryLoop()
+}
+
+async function runRetryLoop(): Promise<void> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
+  const before = await pendingCount()
+  if (before === 0) return
+
+  attemptInFlight = true
+  emitSyncing(true)
+  const { synced } = await flushQueue()
+  emitSyncing(false)
+  attemptInFlight = false
+  await emitPending()
+
+  const after = await pendingCount()
+  if (after === 0) return
+
+  retryDelay = synced > 0 ? RETRY_BASE_MS : Math.min(retryDelay * 2, RETRY_MAX_MS)
+  retryTimer = setTimeout(() => {
+    retryTimer = null
+    void runRetryLoop()
+  }, retryDelay)
+}
