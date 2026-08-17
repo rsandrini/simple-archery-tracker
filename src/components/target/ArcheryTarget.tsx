@@ -19,6 +19,9 @@ interface Props {
 }
 
 export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced, disabled, arrowScale = 1, scrollMode = false, requireConfirmation = false }: Props) {
+  // Scoring must use the exact same radius as the rendered dot (target.arrowRadius * arrowScale * 0.5,
+  // see ArrowDot/ZoomOverlay below) so the hitbox never extends past what the user can see.
+  const scoringArrowRadius = target.arrowRadius * arrowScale * 0.5
   const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null)
   const [awaitingConfirm, setAwaitingConfirm] = useState(false)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -62,9 +65,9 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
     }
 
     setDragPoint(null)
-    const inference = inferScoreFromCoords(pt.x, pt.y, target.modality, target.variant)
+    const inference = inferScoreFromCoords(pt.x, pt.y, target.modality, target.variant, scoringArrowRadius)
     onArrowPlaced({ ...inference, x: pt.x, y: pt.y })
-  }, [toSVGCoords, target, onArrowPlaced, requireConfirmation])
+  }, [toSVGCoords, target, scoringArrowRadius, onArrowPlaced, requireConfirmation])
 
   const cancelDrag = useCallback(() => {
     if (awaitingConfirm) return
@@ -74,11 +77,11 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
 
   const confirmArrow = useCallback(() => {
     if (!dragPoint) return
-    const inference = inferScoreFromCoords(dragPoint.x, dragPoint.y, target.modality, target.variant)
+    const inference = inferScoreFromCoords(dragPoint.x, dragPoint.y, target.modality, target.variant, scoringArrowRadius)
     setAwaitingConfirm(false)
     setDragPoint(null)
     onArrowPlaced({ ...inference, x: dragPoint.x, y: dragPoint.y })
-  }, [dragPoint, target, onArrowPlaced])
+  }, [dragPoint, target, scoringArrowRadius, onArrowPlaced])
 
   const redoArrow = useCallback(() => {
     setAwaitingConfirm(false)
@@ -183,9 +186,9 @@ export function ArcheryTarget({ target, arrows, ghostArrows = [], onArrowPlaced,
           clickY={dragPoint.y}
           target={target}
           existingArrows={arrows}
-          // Must match endDrag's inferScoreFromCoords call exactly (same args, no override) —
+          // Must match endDrag/confirmArrow's inferScoreFromCoords call exactly (same radius) —
           // otherwise the live badge can show a different score than what gets saved on release.
-          liveScore={inferScoreFromCoords(dragPoint.x, dragPoint.y, target.modality, target.variant).score}
+          liveScore={inferScoreFromCoords(dragPoint.x, dragPoint.y, target.modality, target.variant, scoringArrowRadius).score}
           color={dotColors[arrows.length % dotColors.length]}
           arrowScale={arrowScale}
           awaitingConfirm={awaitingConfirm}
