@@ -1,3 +1,7 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
+
 interface Props {
   endIndex: number
   totalEnds: number
@@ -21,6 +25,7 @@ export function EndProgressBar({
   currentTotal,
   maxTotal,
 }: Props) {
+  const t = useTranslations('EndProgressBar')
   const dots = Array.from({ length: arrowsPerEnd })
 
   return (
@@ -28,8 +33,8 @@ export function EndProgressBar({
       {/* Row 1: End counter + live score */}
       <div className="flex items-center justify-between mb-1.5">
         <span className="font-semibold text-gray-800 dark:text-gray-200">
-          End {endIndex + 1}
-          <span className="text-gray-400 dark:text-gray-500 font-normal"> / {totalEnds}</span>
+          {t('end', { current: endIndex + 1 })}
+          <span className="text-gray-400 dark:text-gray-500 font-normal">{t('of', { total: totalEnds })}</span>
         </span>
         <span className="text-sm text-gray-500 dark:text-gray-400">
           <span className="text-base font-bold text-blue-600 dark:text-blue-400">{currentTotal}</span>
@@ -41,9 +46,9 @@ export function EndProgressBar({
       <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
         {distance}
         {' · '}
-        {isWalkUp ? '1-spot' : targetVariant.toLowerCase().replace('-', ' ')}
+        {isWalkUp ? t('1spot') : targetVariant.toLowerCase().replace('-', ' ')}
         {' · '}
-        Arrow {arrowIndex + 1} of {arrowsPerEnd}
+        {t('arrow', { current: arrowIndex + 1, total: arrowsPerEnd })}
       </p>
 
       {/* Row 3: Progress dots */}

@@ -1,5 +1,5 @@
-import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import prisma from '@/lib/db/prisma'
 import { SessionCard } from '@/components/session/SessionCard'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -8,17 +8,23 @@ import { getAuthenticatedUserId } from '@/lib/auth-utils'
 import { APP_VERSION } from '@/lib/version'
 import { getProgressionData } from '@/lib/db/session-queries'
 import { ProgressSection } from '@/components/analytics/ProgressSection'
+import { LandingPage } from './LandingPage'
 
 const PAGE_SIZE = 5
 
 export default async function HomePage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>
   searchParams: Promise<{ page?: string; tab?: string }>
 }) {
+  const { locale } = await params
+  setRequestLocale(locale)
   const userId = await getAuthenticatedUserId()
-  if (!userId) redirect('/login')
+  if (!userId) return <LandingPage locale={locale} />
 
+  const t = await getTranslations({ locale, namespace: 'HomePage' })
   const { page: pageParam, tab: tabParam } = await searchParams
   const tab = tabParam === 'stats' ? 'stats' : 'history'
   const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1)
@@ -48,8 +54,8 @@ export default async function HomePage({
     <main className="max-w-lg mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Quiver</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Archery training tracker</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -61,23 +67,25 @@ export default async function HomePage({
       <div className="flex gap-1 bg-gray-100 dark:bg-gray-900 rounded-xl p-1 mb-6">
         <Link
           href="/?tab=history"
+          locale={locale}
           className={`flex-1 text-center ${tabBase} ${tab === 'history' ? tabActive : tabInactive}`}
         >
-          History
+          {t('history')}
         </Link>
         <Link
           href="/?tab=stats"
+          locale={locale}
           className={`flex-1 text-center ${tabBase} ${tab === 'stats' ? tabActive : tabInactive}`}
         >
-          Stats
+          {t('stats')}
         </Link>
       </div>
 
       {tab === 'history' && (
         total === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
-            <p className="text-lg mb-1">No sessions yet</p>
-            <p className="text-sm">Start a new session to record your training.</p>
+            <p className="text-lg mb-1">{t('noSessionsTitle')}</p>
+            <p className="text-sm">{t('noSessionsDescription')}</p>
           </div>
         ) : (
           <>
@@ -100,6 +108,7 @@ export default async function HomePage({
               <div className="flex items-center justify-between mt-6 text-sm">
                 <Link
                   href={hasPrev ? `/?tab=history&page=${page - 1}` : '#'}
+                  locale={locale}
                   aria-disabled={!hasPrev}
                   className={`px-4 py-2 rounded-lg border transition-colors ${
                     hasPrev
@@ -107,16 +116,17 @@ export default async function HomePage({
                       : 'border-transparent text-gray-300 dark:text-gray-600 pointer-events-none'
                   }`}
                 >
-                  ← Previous
+                  {t('previous')}
                 </Link>
 
                 <span className="text-gray-500 dark:text-gray-400">
-                  {page} / {totalPages}
-                  <span className="ml-2 text-gray-400 dark:text-gray-500">({total} sessions)</span>
+                  {t('pageInfo', { page, totalPages })}
+                  <span className="ml-2 text-gray-400 dark:text-gray-500">{t('sessionCount', { count: total })}</span>
                 </span>
 
                 <Link
                   href={hasNext ? `/?tab=history&page=${page + 1}` : '#'}
+                  locale={locale}
                   aria-disabled={!hasNext}
                   className={`px-4 py-2 rounded-lg border transition-colors ${
                     hasNext
@@ -124,7 +134,7 @@ export default async function HomePage({
                       : 'border-transparent text-gray-300 dark:text-gray-600 pointer-events-none'
                   }`}
                 >
-                  Next →
+                  {t('next')}
                 </Link>
               </div>
             )}
@@ -135,11 +145,11 @@ export default async function HomePage({
       {tab === 'stats' && (
         progressionData.length < 3 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
-            <p className="text-lg mb-1">Not enough data yet</p>
-            <p className="text-sm">Complete at least 3 sessions to see your stats.</p>
+            <p className="text-lg mb-1">{t('notEnoughDataTitle')}</p>
+            <p className="text-sm">{t('notEnoughDataDescription')}</p>
           </div>
         ) : (
-          <ProgressSection sessions={progressionData} />
+          <ProgressSection sessions={progressionData} locale={locale} />
         )
       )}
 

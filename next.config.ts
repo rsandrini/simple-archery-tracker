@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import withSerwistInit from '@serwist/next'
+import createNextIntlPlugin from 'next-intl/plugin'
 
 const withSerwist = withSerwistInit({
   swSrc: 'src/app/sw.ts',
@@ -23,6 +24,9 @@ const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
 const nextConfig: NextConfig = {
   output: 'standalone',
   allowedDevOrigins,
+  experimental: {
+    rootParams: true,
+  },
   serverExternalPackages: ['@prisma/client', '@prisma/adapter-better-sqlite3', 'better-sqlite3', 'pino', 'pino-pretty', 'thread-stream'],
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
@@ -38,7 +42,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(withSentryConfig(nextConfig, {
+const withNextIntl = createNextIntlPlugin()
+
+export default withNextIntl(withSerwist(withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG ?? '',
   project: process.env.SENTRY_PROJECT ?? '',
   silent: !process.env.CI,
@@ -48,4 +54,4 @@ export default withSerwist(withSentryConfig(nextConfig, {
     treeshake: { removeDebugLogging: true },
     automaticVercelMonitors: false,
   },
-}))
+})))

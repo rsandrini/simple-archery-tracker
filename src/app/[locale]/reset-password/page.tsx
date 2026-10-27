@@ -1,10 +1,12 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { Link, useRouter } from '@/i18n/navigation'
 
 function ResetPasswordForm() {
+  const t = useTranslations('ResetPassword')
   const searchParams = useSearchParams()
   const router = useRouter()
   const token = searchParams.get('token') ?? ''
@@ -19,7 +21,7 @@ function ResetPasswordForm() {
     setError('')
 
     if (password !== confirm) {
-      setError('Passwords do not match')
+      setError(t('passwordMismatch'))
       return
     }
 
@@ -32,12 +34,12 @@ function ResetPasswordForm() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? 'Something went wrong')
+        setError(data.error ?? t('error'))
       } else {
         router.push('/login?reset=1')
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('error'))
     } finally {
       setLoading(false)
     }
@@ -47,10 +49,10 @@ function ResetPasswordForm() {
     return (
       <div className="text-center space-y-4">
         <p className="text-gray-600 dark:text-gray-400 text-sm">
-          This reset link is invalid. Please request a new one.
+          {t('invalidToken')}
         </p>
         <Link href="/forgot-password" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
-          Request new link
+          {t('requestNew')}
         </Link>
       </div>
     )
@@ -60,7 +62,7 @@ function ResetPasswordForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          New password
+          {t('newPassword')}
         </label>
         <input
           type="password"
@@ -73,7 +75,7 @@ function ResetPasswordForm() {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Confirm password
+          {t('confirmPassword')}
         </label>
         <input
           type="password"
@@ -90,18 +92,19 @@ function ResetPasswordForm() {
         disabled={loading}
         className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
       >
-        {loading ? 'Saving…' : 'Set new password'}
+        {loading ? t('saving') : t('setPassword')}
       </button>
     </form>
   )
 }
 
 export default function ResetPasswordPage() {
+  const t = useTranslations('ResetPassword')
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-sm space-y-6">
         <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
-          Set new password
+          {t('title')}
         </h1>
         <Suspense>
           <ResetPasswordForm />

@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import type { TargetDef } from '@/lib/domain/types'
 import { SVG_SIZE } from '@/lib/domain/target'
 import { TargetRings } from './TargetRings'
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore, color = '#FF4136', arrowScale = 1 }: Props) {
+  const t = useTranslations('Marking')
   const half = ZOOM_WINDOW / 2
   const vx = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickX - half))
   const vy = Math.max(0, Math.min(SVG_SIZE - ZOOM_WINDOW, clickY - half))
@@ -27,7 +29,7 @@ export function ZoomOverlay({ clickX, clickY, target, existingArrows, liveScore,
     // pointer-events: none so all touch/mouse events fall through to the SVG below
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-3 flex flex-col items-center gap-2">
-        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">Release to place arrow</p>
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">{t('releaseToPlace')}</p>
         <svg
           width={ZOOM_DISPLAY}
           height={ZOOM_DISPLAY}

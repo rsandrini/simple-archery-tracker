@@ -1,8 +1,10 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 export function SyncBanner() {
+  const t = useTranslations('SyncBanner')
   const { online, syncing, pending } = useOnlineStatus()
 
   if (online && !syncing && pending === 0) return null
@@ -15,9 +17,9 @@ export function SyncBanner() {
           ? 'bg-blue-600 text-white'
           : 'bg-green-600 text-white'
     }`}>
-      {!online && 'Offline — changes saved locally'}
-      {online && syncing && 'Syncing…'}
-      {online && !syncing && pending > 0 && `${pending} change${pending !== 1 ? 's' : ''} pending sync`}
+      {!online && t('offline')}
+      {online && syncing && t('syncing')}
+      {online && !syncing && pending > 0 && t('pending', { count: pending })}
     </div>
   )
 }

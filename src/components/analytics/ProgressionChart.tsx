@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   ResponsiveContainer, Tooltip, Legend,
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export function ProgressionChart({ sessions }: Props) {
+  const t = useTranslations('ProgressionChart')
+  const locale = useLocale()
   const [metric, setMetric] = useState<'score' | 'groupRadius'>('score')
 
   const allPoints = progressionSeries(sessions, metric)
@@ -32,14 +35,14 @@ export function ProgressionChart({ sessions }: Props) {
   const data = dates.map(date => {
     const indoor = indoorPoints.find(p => p.date === date)
     const flint = flintPoints.find(p => p.date === date)
-    const label = new Date(date).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })
+    const label = new Date(date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
     return { date: label, indoor: indoor?.value, flint: flint?.value }
   })
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Progression</h3>
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('title')}</h3>
         <div className="flex gap-1">
           {(['score', 'groupRadius'] as const).map(m => (
             <button
@@ -51,7 +54,7 @@ export function ProgressionChart({ sessions }: Props) {
                   : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400'
               }`}
             >
-              {m === 'score' ? 'Score' : 'Group'}
+              {m === 'score' ? t('score') : t('group')}
             </button>
           ))}
         </div>
@@ -61,16 +64,22 @@ export function ProgressionChart({ sessions }: Props) {
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} />
           <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+          <Tooltip
+            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+            formatter={(value) => {
+              if (typeof value !== 'number') return value
+              return Math.round(value * 100) / 100
+            }}
+          />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Line
-            type="monotone" dataKey="indoor" name="Indoor"
+            type="monotone" dataKey="indoor" name={t('indoor')}
             stroke="#3b82f6" strokeWidth={2}
             dot={{ r: 3 }} activeDot={{ r: 5 }}
             connectNulls
           />
           <Line
-            type="monotone" dataKey="flint" name="Flint"
+            type="monotone" dataKey="flint" name={t('flint')}
             stroke="#f97316" strokeWidth={2}
             dot={{ r: 3 }} activeDot={{ r: 5 }}
             connectNulls

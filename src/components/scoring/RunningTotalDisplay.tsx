@@ -1,3 +1,7 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
+
 interface Props {
   runningTotal: number
   maxTotal: number
@@ -7,13 +11,14 @@ interface Props {
 }
 
 export function RunningTotalDisplay({ runningTotal, maxTotal, totalX, endIndex, totalEnds }: Props) {
+  const t = useTranslations('RunningTotalDisplay')
   const pct = maxTotal > 0 ? (runningTotal / maxTotal) * 100 : 0
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
       <div className="flex items-end justify-between mb-2">
-        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Running total</span>
-        <span className="text-xs text-gray-400 dark:text-gray-500">End {endIndex + 1} / {totalEnds}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('runningTotal')}</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">{t('end', { current: endIndex + 1, total: totalEnds })}</span>
       </div>
       <div className="flex items-baseline gap-2 mb-3">
         <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">{runningTotal}</span>

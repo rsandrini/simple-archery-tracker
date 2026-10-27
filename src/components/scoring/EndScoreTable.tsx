@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import type { EndData, ScoreValue, RoundConfig } from '@/lib/domain/types'
 import { sortArrowsDescending } from '@/lib/domain/scoring'
 
@@ -21,6 +22,7 @@ const scoreColor: Record<ScoreValue, string> = {
 }
 
 export function EndScoreTable({ ends, config, currentEndIndex, onScoreOverride }: Props) {
+  const t = useTranslations('EndScoreTable')
   const rows = Array.from({ length: currentEndIndex + 1 }, (_, i) => {
     const end = ends.find(e => e.index === i)
     return { index: i, arrows: end ? sortArrowsDescending(end.arrows) : [] }
@@ -31,11 +33,11 @@ export function EndScoreTable({ ends, config, currentEndIndex, onScoreOverride }
       <table className="w-full text-sm">
         <thead className="bg-gray-50 dark:bg-gray-800/50 text-xs text-gray-500 dark:text-gray-400 uppercase">
           <tr>
-            <th className="px-2 py-2 text-left">#</th>
+            <th className="px-2 py-2 text-left">{t('end')}</th>
             {Array.from({ length: config.arrowsPerEnd }, (_, i) => (
               <th key={i} className="px-1 py-2 text-center" />
             ))}
-            <th className="px-2 py-2 text-right">Pts</th>
+            <th className="px-2 py-2 text-right">{t('points')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">

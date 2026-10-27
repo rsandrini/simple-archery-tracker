@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import type { Hint } from '@/lib/domain/types'
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function PatternHints({ hints, dominantHand }: Props) {
+  const t = useTranslations('PatternHints')
   const [open, setOpen] = useState(false)
 
   return (
@@ -18,7 +20,7 @@ export function PatternHints({ hints, dominantHand }: Props) {
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-4 py-3 text-left"
       >
-        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Pattern hints</span>
+        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('title')}</span>
         <span className="text-gray-400 dark:text-gray-500 text-sm">{open ? '▲' : '▼'}</span>
       </button>
 
@@ -26,17 +28,18 @@ export function PatternHints({ hints, dominantHand }: Props) {
         <div className="px-4 pb-4 space-y-3">
           {dominantHand === null ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              <Link href="/settings" className="text-blue-600 dark:text-blue-400 underline">Set your dominant hand in Settings</Link>
-              {' '}to see pattern suggestions.
+              {t.rich('setDominantHand', {
+                link: (chunks) => <Link href="/settings" className="text-blue-600 dark:text-blue-400 underline">{chunks}</Link>
+              })}
             </p>
           ) : hints.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No significant patterns detected in this session.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('noPatterns')}</p>
           ) : (
             hints.map((hint, i) => (
               <div key={i} className="border-l-2 border-blue-400 dark:border-blue-500 pl-3 space-y-0.5">
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{hint.pattern}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Possible cause: {hint.cause}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Observe: {hint.observe}</p>
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('pattern', { pattern: hint.pattern })}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('cause', { cause: hint.cause })}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{t('observe', { observe: hint.observe })}</p>
               </div>
             ))
           )}

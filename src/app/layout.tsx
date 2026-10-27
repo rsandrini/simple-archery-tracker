@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { SessionProvider } from 'next-auth/react'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { ThemeProvider } from '@/lib/context/ThemeContext'
-import UserHeader from '@/components/ui/UserHeader'
-import { SyncBanner } from '@/components/ui/SyncBanner'
+import { headers } from 'next/headers'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -19,7 +16,6 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-// Runs before React hydration to avoid flash of wrong theme
 const themeScript = `
 try {
   var t = localStorage.getItem('quiver-theme');
@@ -29,10 +25,19 @@ try {
 } catch(e) {}
 `
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  let locale = 'en'
+  try {
+    const h = await headers()
+    const headerLocale = h.get('X-NEXT-INTL-LOCALE')
+    if (headerLocale) locale = headerLocale
+  } catch {
+    // fallback to default
+  }
+
   return (
     <html
-      lang="en"
+      lang={locale}
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
@@ -42,13 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#111827" />
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
-        <SessionProvider>
-          <ThemeProvider>
-            <UserHeader />
-            {children}
-          </ThemeProvider>
-        </SessionProvider>
-        <SyncBanner />
+        {children}
         <script
           dangerouslySetInnerHTML={{
             __html: `if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')`,

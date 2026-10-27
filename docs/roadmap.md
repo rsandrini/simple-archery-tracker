@@ -1,6 +1,6 @@
 # Quiver — Roadmap
 
-_Last updated: 2026-06-23_
+_Last updated: 2026-10-26_
 
 ---
 
@@ -14,6 +14,8 @@ _Last updated: 2026-06-23_
 - Docker + Cloudflare Tunnel deployment
 - Analytics tab — avg pts per arrow, X rate, miss rate, dispersion ellipse, centroid bias
 - Offline-first PWA — installable app, IndexedDB local store, optimistic writes, sync queue, offline indicator
+- Public landing page — project overview, feature highlights, and README screenshots/gifs for unauthenticated users
+- Multi-language (i18n) — `next-intl` for Next.js 15 App Router; EN + PT-BR
 
 ---
 
@@ -47,10 +49,6 @@ _Last updated: 2026-06-23_
 ---
 
 ## Long-term
-
-### Multi-language (i18n)
-- `next-intl` for Next.js 15 App Router
-- Start with EN + PT-BR
 
 ### Google OAuth
 - NextAuth provider addition — one-tap sign in

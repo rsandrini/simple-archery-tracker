@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { personalRecords } from '@/lib/domain/analytics'
 import { ProgressionChart } from './ProgressionChart'
 import type { Modality, PREntry } from '@/lib/domain/types'
@@ -13,14 +14,14 @@ interface SessionRow {
   consistency: number
 }
 
-function PRCard({ label, entry, unit }: { label: string; entry: PREntry | null; unit?: string }) {
+async function PRCard({ label, entry, unit, locale }: { label: string; entry: PREntry | null; unit?: string; locale: string }) {
   if (!entry) return (
     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
       <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{label}</p>
       <p className="text-base font-bold text-gray-300 dark:text-gray-600">—</p>
     </div>
   )
-  const date = new Date(entry.date).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })
+  const date = new Date(entry.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
   return (
     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
       <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{label}</p>
@@ -34,9 +35,11 @@ function PRCard({ label, entry, unit }: { label: string; entry: PREntry | null; 
 
 interface Props {
   sessions: SessionRow[]
+  locale: string
 }
 
-export async function ProgressSection({ sessions }: Props) {
+export async function ProgressSection({ sessions, locale }: Props) {
+  const t = await getTranslations({ locale, namespace: 'ProgressSection' })
   if (sessions.length < 3) return null
 
   const pr = personalRecords(sessions)
@@ -50,35 +53,35 @@ export async function ProgressSection({ sessions }: Props) {
     : latest.consistency
   const diff = latest.consistency - rollingAvg
   const consistencyLabel = diff < -0.5
-    ? { text: '↓ Improving', cls: 'text-green-600 dark:text-green-400' }
+    ? { text: t('improving'), cls: 'text-green-600 dark:text-green-400' }
     : diff > 0.5
-    ? { text: '↑ Watch consistency', cls: 'text-orange-500 dark:text-orange-400' }
-    : { text: '→ Stable', cls: 'text-gray-500 dark:text-gray-400' }
+    ? { text: t('watchConsistency'), cls: 'text-orange-500 dark:text-orange-400' }
+    : { text: t('stable'), cls: 'text-gray-500 dark:text-gray-400' }
 
   return (
     <section className="mb-6 space-y-4">
-      <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Progress</h2>
+      <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">{t('progress')}</h2>
 
       <ProgressionChart sessions={sessions} />
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">Personal records</h3>
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">{t('personalRecords')}</h3>
         <div className="grid grid-cols-2 gap-3">
-          <PRCard label="Best Indoor" entry={pr.bestScoreIndoor} />
-          <PRCard label="Best Flint" entry={pr.bestScoreFlint} />
-          <PRCard label="Best end" entry={pr.bestEnd} />
-          <PRCard label="Tightest group" entry={pr.tightestGroup} unit="radius" />
+          <PRCard label={t('bestIndoor')} entry={pr.bestScoreIndoor} locale={locale} />
+          <PRCard label={t('bestFlint')} entry={pr.bestScoreFlint} locale={locale} />
+          <PRCard label={t('bestEnd')} entry={pr.bestEnd} locale={locale} />
+          <PRCard label={t('tightestGroup')} entry={pr.tightestGroup} unit="radius" locale={locale} />
         </div>
         <div className="mt-3">
-          <PRCard label="Most Xs in a session" entry={pr.mostX} />
+          <PRCard label={t('mostX')} entry={pr.mostX} locale={locale} />
         </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Session consistency trend</h3>
-        <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{latest.consistency.toFixed(1)} pts std dev</p>
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">{t('consistencyTitle')}</h3>
+        <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('ptsStdDev', { value: latest.consistency.toFixed(1) })}</p>
         <p className={`text-sm font-medium mt-0.5 ${consistencyLabel.cls}`}>{consistencyLabel.text}</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">vs {last5.length}-session avg ({rollingAvg.toFixed(1)})</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('vsAvg', { count: last5.length, avg: rollingAvg.toFixed(1) })}</p>
       </div>
     </section>
   )

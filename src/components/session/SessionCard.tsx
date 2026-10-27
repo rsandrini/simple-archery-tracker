@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
+import { useRouter } from '@/i18n/navigation'
 
 interface Props {
   id: string
@@ -13,18 +14,8 @@ interface Props {
   rating?: number | null
 }
 
-const modalityLabel: Record<string, string> = {
-  INDOOR: 'Indoor Round',
-  FLINT: 'Flint Round',
-}
-
-const variantLabel: Record<string, string> = {
-  '1-SPOT': '1 spot',
-  '5-SPOT': '5 spot',
-  '4-SPOT': '4 spot',
-}
-
 export function SessionCard({ id, modality, targetVariant, createdAt, endCount, rating }: Props) {
+  const t = useTranslations('SessionCard')
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -36,6 +27,17 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
       month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
     }))
   }, [createdAt])
+
+  const modalityLabel: Record<string, string> = {
+    INDOOR: t('indoor'),
+    FLINT: t('flint'),
+  }
+
+  const variantLabel: Record<string, string> = {
+    '1-SPOT': t('1spot'),
+    '5-SPOT': t('5spot'),
+    '4-SPOT': t('4spot'),
+  }
 
   const totalEnds = modality === 'INDOOR' ? 12 : 7
   const isComplete = endCount >= totalEnds
@@ -52,25 +54,25 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
     return (
       <div className="rounded-xl border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/40 p-4">
         <div className="mb-3">
-          <p className="font-semibold text-red-800 dark:text-red-300">Delete this session?</p>
+          <p className="font-semibold text-red-800 dark:text-red-300">{t('deleteTitle')}</p>
           <p className="text-sm text-red-600 dark:text-red-400 mt-0.5">
             {modalityLabel[modality] ?? modality} · {formatted}
           </p>
-          <p className="text-xs text-red-500 dark:text-red-500 mt-1">This cannot be undone.</p>
+          <p className="text-xs text-red-500 dark:text-red-500 mt-1">{t('cannotUndo')}</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setConfirming(false)}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             onClick={handleDelete}
             disabled={deleting}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white disabled:opacity-50 transition-colors"
           >
-            {deleting ? 'Deleting…' : 'Confirm Delete'}
+            {deleting ? t('deleting') : t('confirmDelete')}
           </button>
         </div>
       </div>
@@ -99,7 +101,7 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
                 ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                 : 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
             }`}>
-              {isComplete ? 'Complete' : `End ${endCount}/${totalEnds}`}
+              {isComplete ? t('complete') : t('end', { current: endCount, total: totalEnds })}
             </span>
           </div>
         </div>
@@ -107,7 +109,7 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
 
       <button
         onClick={() => setConfirming(true)}
-        title="Delete session"
+        title={t('deleteSession')}
         className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

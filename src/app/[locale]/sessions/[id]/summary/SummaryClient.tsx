@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { sessionSummary, sortArrowsDescending, scoreToPoints, isX } from '@/lib/domain/scoring'
 import { getConfig } from '@/lib/domain/rounds'
@@ -47,6 +48,7 @@ function UnifiedArrowTable({
   config: ReturnType<typeof getConfig>
   onScoreOverride: (id: string, score: ScoreValue) => void
 }) {
+  const t = useTranslations('Summary')
   let running = 0
 
   const rows = session.ends.map(end => {
@@ -70,19 +72,19 @@ function UnifiedArrowTable({
       <table className="w-full text-sm">
         <thead className="bg-gray-50 dark:bg-gray-800/60 text-xs text-gray-500 dark:text-gray-400 uppercase">
           <tr>
-            <th className="px-2 py-2 text-left">End</th>
+            <th className="px-2 py-2 text-left">{t('end')}</th>
             {Array.from({ length: config.arrowsPerEnd }, (_, i) => (
               <th key={i} className="px-1 py-2 text-center" />
             ))}
-            <th className="px-2 py-2 text-right">End</th>
-            <th className="px-2 py-2 text-right">Total</th>
+            <th className="px-2 py-2 text-right">{t('endTotal')}</th>
+            <th className="px-2 py-2 text-right">{t('runningTotal')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
           {rows.map(row => (
             <tr key={row.endIndex} className="hover:bg-gray-50 dark:hover:bg-gray-700/20">
               <td className="px-2 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 tabular-nums">
-                E{row.endIndex + 1}
+                {t('endShort', { number: row.endIndex + 1 })}
               </td>
               {Array.from({ length: config.arrowsPerEnd }, (_, slot) => {
                 const arrow = row.arrows[slot]
@@ -122,7 +124,7 @@ function UnifiedArrowTable({
           {rows.length === 0 && (
             <tr>
               <td colSpan={config.arrowsPerEnd + 3} className="px-3 py-6 text-center text-xs text-gray-400 dark:text-gray-500">
-                No arrows recorded yet.
+                {t('noArrows')}
               </td>
             </tr>
           )}
@@ -133,6 +135,7 @@ function UnifiedArrowTable({
 }
 
 function StarRating({ value, onChange }: { value: number | null; onChange: (v: number) => void }) {
+  const t = useTranslations('Summary')
   const [hovered, setHovered] = useState(0)
   const active = hovered || value || 0
 
@@ -146,7 +149,7 @@ function StarRating({ value, onChange }: { value: number | null; onChange: (v: n
           onMouseEnter={() => setHovered(star)}
           onMouseLeave={() => setHovered(0)}
           className="text-3xl leading-none transition-transform hover:scale-110 focus:outline-none"
-          title={`${star} star${star !== 1 ? 's' : ''}`}
+          title={t('star', { count: star })}
         >
           <span className={active >= star ? 'text-yellow-400' : 'text-gray-200 dark:text-gray-600'}>
             ★
@@ -158,16 +161,18 @@ function StarRating({ value, onChange }: { value: number | null; onChange: (v: n
 }
 
 function FatigueCurve({ session }: { session: SessionData }) {
+  const t = useTranslations('Summary')
+  const locale = useLocale()
   const pts = pointsPerEnd(session)
   if (pts.length === 0) return null
   const avg = pts.reduce((s, p) => s + p, 0) / pts.length
-  const data = pts.map((p, i) => ({ end: `E${i + 1}`, pts: p }))
+  const data = pts.map((p, i) => ({ end: t('endShort', { number: i + 1 }), pts: p }))
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Points per end</h3>
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">{t('pointsPerEnd')}</h3>
       <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-        Avg <span className="font-medium text-gray-600 dark:text-gray-300">{avg.toFixed(1)}</span> pts
+        {t('avg', { value: avg.toLocaleString(locale, { maximumFractionDigits: 1 }) })}
       </p>
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
@@ -176,7 +181,7 @@ function FatigueCurve({ session }: { session: SessionData }) {
           <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            formatter={(v) => [`${v ?? 0} pts`, 'Score']}
+            formatter={(v) => [`${v ?? 0} pts`, t('pointsPerEnd')]}
           />
           <ReferenceLine
             y={avg}
@@ -206,6 +211,7 @@ const SCORE_COLORS: Record<ScoreValue, string> = {
 const SCORE_ORDER: ScoreValue[] = ['X', '5', '4', '3', '2', '1', 'M']
 
 function ScoreHistogram({ session }: { session: SessionData }) {
+  const t = useTranslations('Summary')
   const dist = scoreDistribution(session)
   const data = SCORE_ORDER.map(s => ({ score: s, count: dist[s], color: SCORE_COLORS[s] }))
   const total = data.reduce((s, d) => s + d.count, 0)
@@ -213,8 +219,8 @@ function ScoreHistogram({ session }: { session: SessionData }) {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Score distribution</h3>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">{total} arrows total</p>
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">{t('scoreDistribution')}</h3>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">{t('arrowsTotal', { count: total })}</p>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
@@ -222,7 +228,7 @@ function ScoreHistogram({ session }: { session: SessionData }) {
           <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            formatter={(v) => [v ?? 0, 'arrows']}
+            formatter={(v) => [v ?? 0, t('arrows')]}
           />
           <Bar dataKey="count" radius={[4, 4, 0, 0]}>
             {data.map((entry, i) => (
@@ -248,6 +254,8 @@ function AnalyticsTab({
   dominantHand: string | null
   arrowScale: number
 }) {
+  const t = useTranslations('Summary')
+  const locale = useLocale()
   const allArrows = session.ends.flatMap(e => e.arrows)
   const flagged = flagOutliers(allArrows)
   const outlierFlags = new Map(flagged.map(a => [a.id, a.isOutlier]))
@@ -267,7 +275,7 @@ function AnalyticsTab({
       {/* Outlier toggle */}
       <div className="flex items-center justify-end gap-2">
         {outlierCount > 0 && ignoreFliers && (
-          <span className="text-xs text-gray-400 dark:text-gray-500">{outlierCount} flier{outlierCount !== 1 ? 's' : ''} excluded</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{t('fliersExcluded', { count: outlierCount })}</span>
         )}
         {outlierCount > 0 && (
           <button
@@ -278,7 +286,7 @@ function AnalyticsTab({
                 : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400'
             }`}
           >
-            {ignoreFliers ? 'Show all arrows' : 'Ignore fliers'}
+            {ignoreFliers ? t('showAll') : t('ignoreFliers')}
           </button>
         )}
       </div>
@@ -293,23 +301,23 @@ function AnalyticsTab({
       {/* Stat cards row */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Avg / arrow</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{avgPtsPerArrow.toFixed(2)}</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">of 5.00</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{t('avgPerArrow')}</p>
+          <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{avgPtsPerArrow.toLocaleString(locale, { maximumFractionDigits: 2 })}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('ofMax')}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">X rate</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{t('xRate')}</p>
           <p className="text-xl font-bold text-green-600 dark:text-green-400">
-            {allArrows.length > 0 ? ((allArrows.filter(a => a.isX).length / allArrows.length) * 100).toFixed(1) : '0.0'}%
+            {allArrows.length > 0 ? ((allArrows.filter(a => a.isX).length / allArrows.length) * 100).toLocaleString(locale, { maximumFractionDigits: 1 }) : '0.0'}%
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{allArrows.filter(a => a.isX).length} of {allArrows.length}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('countOfTotal', { count: allArrows.filter(a => a.isX).length, total: allArrows.length })}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Miss rate</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{t('missRate')}</p>
           <p className="text-xl font-bold text-red-500 dark:text-red-400">
-            {allArrows.length > 0 ? ((allArrows.filter(a => a.score === 'M').length / allArrows.length) * 100).toFixed(1) : '0.0'}%
+            {allArrows.length > 0 ? ((allArrows.filter(a => a.score === 'M').length / allArrows.length) * 100).toLocaleString(locale, { maximumFractionDigits: 1 }) : '0.0'}%
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{allArrows.filter(a => a.score === 'M').length} of {allArrows.length}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('countOfTotal', { count: allArrows.filter(a => a.score === 'M').length, total: allArrows.length })}</p>
         </div>
       </div>
 
@@ -329,6 +337,7 @@ function AnalyticsTab({
 }
 
 export function SummaryClient({ session: initialSession, initialNotes, initialRating, dominantHand }: Props) {
+  const t = useTranslations('Summary')
   const [session, setSession] = useState(initialSession)
   const [notes, setNotes] = useState(initialNotes)
   const [rating, setRating] = useState<number | null>(initialRating)
@@ -405,20 +414,22 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
     setArrowScale(isNaN(parsed) ? 1 : Math.min(1, Math.max(0.5, parsed)))
   }, [])
 
+  const modalityLabel = session.modality === 'INDOOR' ? t('indoor') : t('flint')
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
         <Link href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
-          ← Sessions
+          {t('back')}
         </Link>
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {session.modality === 'INDOOR' ? 'Indoor Round' : 'Flint Round'} — Summary
+          {t('title', { modality: modalityLabel })}
         </span>
         <div className="flex items-center gap-2">
           <ThemeToggle />
           {!isComplete && (
             <Link href={`/sessions/${session.id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
-              Continue
+              {t('continue')}
             </Link>
           )}
         </div>
@@ -426,17 +437,17 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
 
       {/* Tab bar */}
       <div className="sticky top-0 z-10 flex bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        {(['overview', 'analytics'] as const).map(t => (
+        {(['overview', 'analytics'] as const).map(tKey => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tKey}
+            onClick={() => setTab(tKey)}
             className={`flex-1 py-3 text-sm font-medium capitalize transition-colors
-              ${tab === t
+              ${tab === tKey
                 ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
                 : 'text-gray-500 dark:text-gray-400'
               }`}
           >
-            {t === 'overview' ? 'Overview' : 'Analytics'}
+            {tKey === 'overview' ? t('overview') : t('analytics')}
           </button>
         ))}
       </div>
@@ -447,7 +458,7 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
             {/* Score summary card */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <div className="flex items-end justify-between mb-1">
-                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total score</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('totalScore')}</span>
                 <span className="text-xs text-gray-400 dark:text-gray-500">{pct}%</span>
               </div>
               <div className="flex items-baseline gap-2 mb-3">
@@ -459,13 +470,13 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
               </div>
               <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
                 <span><span className="font-semibold text-yellow-700 dark:text-yellow-400">{summary.totalX}</span> × X</span>
-                <span><span className="font-semibold text-gray-900 dark:text-gray-100">{session.ends.length}</span> ends shot</span>
+                <span><span className="font-semibold text-gray-900 dark:text-gray-100">{session.ends.length}</span> {t('endsShot', { count: session.ends.length })}</span>
               </div>
             </div>
 
             {/* All arrows — unified flat table */}
             <div className="space-y-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400 px-1">Tap any score to correct it.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 px-1">{t('tapToCorrect')}</p>
               <UnifiedArrowTable
                 session={session}
                 config={config}
@@ -476,25 +487,25 @@ export function SummaryClient({ session: initialSession, initialNotes, initialRa
             {/* Rating & Notes */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Session notes</h2>
+                <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('sessionNotes')}</h2>
                 <span className={`text-xs transition-opacity ${
                   saveStatus === 'idle' ? 'opacity-0' : 'opacity-100'
                 } ${saveStatus === 'saved' ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
-                  {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
+                  {saveStatus === 'saving' ? t('saving') : t('saved')}
                 </span>
               </div>
 
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Rating</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('rating')}</p>
                 <StarRating value={rating} onChange={handleRatingChange} />
               </div>
 
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Comments</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('comments')}</p>
                 <textarea
                   value={notes}
                   onChange={handleNotesChange}
-                  placeholder="How did this session go? Notes on form, equipment, conditions…"
+                  placeholder={t('commentsPlaceholder')}
                   rows={3}
                   className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
                 />

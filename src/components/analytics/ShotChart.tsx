@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { ArrowDot } from '@/components/target/ArrowDot'
 import { TargetRings } from '@/components/target/TargetRings'
 import { getTargetDef, SVG_SIZE } from '@/lib/domain/target'
@@ -19,21 +20,6 @@ function groupStats(arrows: ArrowData[], spotCx: number, spotCy: number) {
   const dists = arrows.map(a => Math.hypot(a.x - cx, a.y - cy))
   const meanSpread = dists.reduce((s, d) => s + d, 0) / (dists.length || 1)
   return { cx, cy, meanSpread, offset: Math.hypot(cx - spotCx, cy - spotCy) }
-}
-
-function qualityInfo(meanSpread: number, refRadius: number) {
-  const p = meanSpread / refRadius
-  if (p < 0.12) return { label: 'Tight',    cls: 'text-green-600 dark:text-green-400' }
-  if (p < 0.28) return { label: 'Good',     cls: 'text-blue-600 dark:text-blue-400' }
-  if (p < 0.50) return { label: 'Moderate', cls: 'text-yellow-600 dark:text-yellow-400' }
-  return           { label: 'Spread',    cls: 'text-red-500 dark:text-red-400' }
-}
-
-function aimDirection(cx: number, cy: number, spotCx = 100, spotCy = 100): string {
-  const dx = cx - spotCx, dy = cy - spotCy, t = 4
-  const v = dy < -t ? 'High' : dy > t ? 'Low' : ''
-  const h = dx < -t ? 'Left' : dx > t ? 'Right' : ''
-  return v && h ? `${v}-${h}` : v || h || 'Centered'
 }
 
 function Crosshair({ x, y, arm = 5, w = 0.8 }: { x: number; y: number; arm?: number; w?: number }) {
@@ -63,12 +49,16 @@ function SingleSpotView({
 }: {
   arrows: ArrowData[]; target: TargetDef; outlierFlags: Map<string, boolean>; title?: string; arrowScale?: number
 }) {
+  const t = useTranslations('ShotChart')
   const spot = target.spots[0]
   const visibleArrows = arrows.filter(a => !outlierFlags.get(a.id))
   const stats = groupStats(visibleArrows.length > 0 ? visibleArrows : arrows, spot.cx, spot.cy)
-  const q = qualityInfo(stats.meanSpread, spot.spotRadius)
-  const aim = aimDirection(stats.cx, stats.cy)
+  const q = qualityInfo(t, stats.meanSpread, spot.spotRadius)
+  const aim = aimDirection(t, stats.cx, stats.cy)
   const ellipse = dispersionEllipse(visibleArrows.length > 0 ? visibleArrows : arrows)
+  const orientationKey = ellipse.orientation === 'horizontal' ? 'orientationHorizontal'
+    : ellipse.orientation === 'vertical' ? 'orientationVertical'
+    : 'orientationRound'
 
   return (
     <div>
@@ -95,16 +85,16 @@ function SingleSpotView({
         </svg>
       </div>
       <p className="text-xs text-center text-gray-400 dark:text-gray-500 mb-2">
-        Group: {ellipse.orientation.charAt(0).toUpperCase() + ellipse.orientation.slice(1)}
+        {t('group', { orientation: t(orientationKey) })}
       </p>
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Avg group radius</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{t('avgGroupRadius')}</p>
           <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.meanSpread.toFixed(1)}</p>
           <p className={`text-xs font-semibold mt-0.5 ${q.cls}`}>{q.label}</p>
         </div>
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Aim offset</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{t('aimOffset')}</p>
           <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.offset.toFixed(1)}</p>
           <p className="text-xs font-semibold mt-0.5 text-gray-600 dark:text-gray-400">{aim}</p>
         </div>
@@ -118,6 +108,7 @@ function PerSpotView({
 }: {
   arrows: ArrowData[]; target: TargetDef; outlierFlags: Map<string, boolean>; title?: string; arrowScale?: number
 }) {
+  const t = useTranslations('ShotChart')
   const bySpot = new Map<number, ArrowData[]>()
   for (const a of arrows) {
     const idx = a.spotIndex ?? 0
@@ -137,23 +128,14 @@ function PerSpotView({
           const vb = `${spot.cx - r} ${spot.cy - r} ${r * 2} ${r * 2}`
           const visibleArrows = spotArrows.filter(a => !outlierFlags.get(a.id))
           const stats = groupStats(visibleArrows.length > 0 ? visibleArrows : spotArrows, spot.cx, spot.cy)
-          const q = qualityInfo(stats.meanSpread, spot.spotRadius)
-          const aim = aimDirection(stats.cx, stats.cy, spot.cx, spot.cy)
-          const ellipse = dispersionEllipse(visibleArrows.length > 0 ? visibleArrows : spotArrows)
+          const q = qualityInfo(t, stats.meanSpread, spot.spotRadius)
+          const aim = aimDirection(t, stats.cx, stats.cy, spot.cx, spot.cy)
 
           return (
             <div key={spot.index} className="bg-gray-50 dark:bg-gray-900 rounded-xl p-2">
-              <p className="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">Spot {spot.index + 1}</p>
+              <p className="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">{t('spot', { number: spot.index + 1 })}</p>
               <svg viewBox={vb} className="w-full aspect-square">
                 <TargetRings spot={spot} rings={target.rings} background={target.background} />
-                {(ellipse.sdX > 0 || ellipse.sdY > 0) && (
-                  <ellipse
-                    cx={stats.cx} cy={stats.cy}
-                    rx={Math.max(ellipse.sdX * 2.5, 0.5)} ry={Math.max(ellipse.sdY * 2.5, 0.5)}
-                    fill="rgba(59,130,246,0.06)" stroke="#3b82f6"
-                    strokeWidth={0.4} strokeDasharray="1.5 1"
-                  />
-                )}
                 {spotArrows.map(a =>
                   outlierFlags.get(a.id)
                     ? <OutlierMark key={a.id} x={a.x} y={a.y} r={target.arrowRadius * arrowScale * 0.5} />
@@ -174,6 +156,24 @@ function PerSpotView({
   )
 }
 
+function qualityInfo(t: ReturnType<typeof useTranslations>, meanSpread: number, refRadius: number) {
+  const p = meanSpread / refRadius
+  if (p < 0.12) return { label: t('tight'),    cls: 'text-green-600 dark:text-green-400' }
+  if (p < 0.28) return { label: t('good'),     cls: 'text-blue-600 dark:text-blue-400' }
+  if (p < 0.50) return { label: t('moderate'), cls: 'text-yellow-600 dark:text-yellow-400' }
+  return           { label: t('spread'),    cls: 'text-red-500 dark:text-red-400' }
+}
+
+function aimDirection(t: ReturnType<typeof useTranslations>, cx: number, cy: number, spotCx = 100, spotCy = 100): string {
+  const dx = cx - spotCx, dy = cy - spotCy, threshold = 4
+  const v = dy < -threshold ? 'high' : dy > threshold ? 'low' : ''
+  const h = dx < -threshold ? 'left' : dx > threshold ? 'right' : ''
+  if (v && h) return t(`${v}${h.charAt(0).toUpperCase() + h.slice(1)}` as Parameters<typeof t>[0])
+  if (v) return t(v as Parameters<typeof t>[0])
+  if (h) return t(h as Parameters<typeof t>[0])
+  return t('centered')
+}
+
 interface ShotChartProps {
   session: SessionData
   outlierFlags?: Map<string, boolean>
@@ -181,6 +181,7 @@ interface ShotChartProps {
 }
 
 export function ShotChart({ session, outlierFlags = new Map(), arrowScale = 1 }: ShotChartProps) {
+  const t = useTranslations('ShotChart')
   const allArrows = session.ends.flatMap(e => e.arrows)
   if (allArrows.length === 0) return null
 
@@ -193,14 +194,14 @@ export function ShotChart({ session, outlierFlags = new Map(), arrowScale = 1 }:
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-5">
-      <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Shot chart</h2>
+      <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('title')}</h2>
       {singleArrows.length > 0 && (
         <SingleSpotView
           arrows={singleArrows}
           target={singleTarget}
           outlierFlags={outlierFlags}
           arrowScale={arrowScale}
-          title={hasBoth ? 'Single-face target (all ends combined)' : undefined}
+          title={hasBoth ? t('singleFace') : undefined}
         />
       )}
       {multiArrows.length > 0 && (
@@ -209,7 +210,7 @@ export function ShotChart({ session, outlierFlags = new Map(), arrowScale = 1 }:
           target={multiTarget}
           outlierFlags={outlierFlags}
           arrowScale={arrowScale}
-          title={hasBoth ? 'Multi-face target — per spot' : undefined}
+          title={hasBoth ? t('multiFace') : undefined}
         />
       )}
     </div>

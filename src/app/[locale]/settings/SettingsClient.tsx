@@ -3,7 +3,8 @@
 import { useTheme } from '@/lib/context/ThemeContext'
 import { signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { getTargetDef } from '@/lib/domain/target'
 import { TargetRings } from '@/components/target/TargetRings'
 
@@ -21,6 +22,7 @@ interface Props {
 type Msg = { type: 'ok' | 'err'; text: string }
 
 export default function SettingsClient({ user }: Props) {
+  const t = useTranslations('Settings')
   const { theme, toggle } = useTheme()
 
   const [nameForm, setNameForm] = useState({ newName: user.name })
@@ -64,9 +66,9 @@ export default function SettingsClient({ user }: Props) {
       })
       const data = await res.json()
       if (res.ok) {
-        setNameMsg({ type: 'ok', text: 'Name updated.' })
+        setNameMsg({ type: 'ok', text: t('nameUpdated') })
       } else {
-        setNameMsg({ type: 'err', text: data.error ?? 'Failed to update name' })
+        setNameMsg({ type: 'err', text: data.error ?? t('nameFailed') })
       }
     } finally {
       setNameLoading(false)
@@ -85,11 +87,11 @@ export default function SettingsClient({ user }: Props) {
       })
       const data = await res.json()
       if (res.ok) {
-        setEmailMsg({ type: 'ok', text: 'Email updated. Signing you out…' })
+        setEmailMsg({ type: 'ok', text: t('emailUpdated') })
         setEmailForm({ currentPassword: '', newEmail: '' })
         setTimeout(() => signOut({ callbackUrl: '/login' }), 1500)
       } else {
-        setEmailMsg({ type: 'err', text: data.error ?? 'Failed to update email' })
+        setEmailMsg({ type: 'err', text: data.error ?? t('emailFailed') })
       }
     } finally {
       setEmailLoading(false)
@@ -100,7 +102,7 @@ export default function SettingsClient({ user }: Props) {
     e.preventDefault()
     setPwMsg(null)
     if (pwForm.newPassword !== pwForm.confirmPassword) {
-      setPwMsg({ type: 'err', text: 'New passwords do not match' })
+      setPwMsg({ type: 'err', text: t('passwordMismatch') })
       return
     }
     setPwLoading(true)
@@ -112,10 +114,10 @@ export default function SettingsClient({ user }: Props) {
       })
       const data = await res.json()
       if (res.ok) {
-        setPwMsg({ type: 'ok', text: 'Password updated successfully.' })
+        setPwMsg({ type: 'ok', text: t('passwordUpdated') })
         setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
       } else {
-        setPwMsg({ type: 'err', text: data.error ?? 'Failed to update password' })
+        setPwMsg({ type: 'err', text: data.error ?? t('passwordFailed') })
       }
     } finally {
       setPwLoading(false)
@@ -133,13 +135,13 @@ export default function SettingsClient({ user }: Props) {
         body: JSON.stringify({ type: 'dominantHand', value: next }),
       })
       if (res.ok) {
-        setHandMsg({ type: 'ok', text: 'Saved.' })
+        setHandMsg({ type: 'ok', text: t('saved') })
       } else {
         const data = await res.json()
-        setHandMsg({ type: 'err', text: data.error ?? 'Failed to save' })
+        setHandMsg({ type: 'err', text: data.error ?? t('saveFailed') })
       }
     } catch {
-      setHandMsg({ type: 'err', text: 'Network error' })
+      setHandMsg({ type: 'err', text: t('networkError') })
     }
   }
 
@@ -153,16 +155,16 @@ export default function SettingsClient({ user }: Props) {
     <main className="max-w-lg mx-auto px-4 py-8 space-y-10">
       <div className="flex items-center gap-3">
         <Link href="/" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-lg leading-none">
-          ←
+          {t('back')}
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
       </div>
 
       {/* Archer Profile */}
       <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Archer Profile</h2>
+        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('archerProfile')}</h2>
         <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Dominant hand</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('dominantHand')}</p>
           <div className="flex gap-2">
             {(['right', 'left'] as const).map(h => (
               <button
@@ -174,7 +176,7 @@ export default function SettingsClient({ user }: Props) {
                     : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
               >
-                {h === 'right' ? 'Right-handed' : 'Left-handed'}
+                {h === 'right' ? t('rightHanded') : t('leftHanded')}
               </button>
             ))}
           </div>
@@ -188,7 +190,7 @@ export default function SettingsClient({ user }: Props) {
 
       {/* Appearance */}
       <section className="space-y-3">
-        <h2 className={sectionHeading}>Appearance</h2>
+        <h2 className={sectionHeading}>{t('appearance')}</h2>
         <div className="flex gap-3">
           <button
             onClick={() => { if (theme !== 'light') toggle() }}
@@ -198,7 +200,7 @@ export default function SettingsClient({ user }: Props) {
                 : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
             }`}
           >
-            ☀ Light
+            {t('light')}
           </button>
           <button
             onClick={() => { if (theme !== 'dark') toggle() }}
@@ -208,17 +210,17 @@ export default function SettingsClient({ user }: Props) {
                 : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
             }`}
           >
-            ☾ Dark
+            {t('dark')}
           </button>
         </div>
       </section>
 
       {/* Targeting */}
       <section className="space-y-3">
-        <h2 className={sectionHeading}>Targeting</h2>
+        <h2 className={sectionHeading}>{t('targeting')}</h2>
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-700 dark:text-gray-300">Arrow dot size</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{t('arrowDotSize')}</p>
             <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
               {Math.round(arrowScale * 100)}%
             </span>
@@ -237,7 +239,7 @@ export default function SettingsClient({ user }: Props) {
             onTouchStart={() => setShowArrowPreview(true)}
             onTouchEnd={() => setShowArrowPreview(false)}
             className="w-full h-1 accent-blue-500 cursor-pointer"
-            aria-label="Arrow dot size"
+            aria-label={t('arrowDotSize')}
           />
           {showArrowPreview && (
             <svg
@@ -270,19 +272,19 @@ export default function SettingsClient({ user }: Props) {
             </svg>
           )}
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Smaller dots make groupings easier to read.
+            {t('arrowDotHint')}
           </p>
         </div>
       </section>
 
       {/* Change name */}
       <section className="space-y-3">
-        <h2 className={sectionHeading}>Display Name</h2>
+        <h2 className={sectionHeading}>{t('displayName')}</h2>
         <form onSubmit={handleNameSubmit} className="space-y-3">
           <input
             type="text"
             required
-            placeholder="Your name"
+            placeholder={t('yourName')}
             value={nameForm.newName}
             onChange={e => setNameForm({ newName: e.target.value })}
             className={inputClass}
@@ -297,22 +299,22 @@ export default function SettingsClient({ user }: Props) {
             disabled={nameLoading}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {nameLoading ? 'Updating…' : 'Update name'}
+            {nameLoading ? t('updating') : t('updateName')}
           </button>
         </form>
       </section>
 
       {/* Change email */}
       <section className="space-y-3">
-        <h2 className={sectionHeading}>Change Email</h2>
+        <h2 className={sectionHeading}>{t('changeEmail')}</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Current: <span className="text-gray-700 dark:text-gray-300">{user.email}</span>
+          {t('currentEmail', { email: user.email })}
         </p>
         <form onSubmit={handleEmailSubmit} className="space-y-3">
           <input
             type="email"
             required
-            placeholder="New email address"
+            placeholder={t('newEmail')}
             value={emailForm.newEmail}
             onChange={e => setEmailForm(f => ({ ...f, newEmail: e.target.value }))}
             className={inputClass}
@@ -320,7 +322,7 @@ export default function SettingsClient({ user }: Props) {
           <input
             type="password"
             required
-            placeholder="Current password to confirm"
+            placeholder={t('currentPassword')}
             value={emailForm.currentPassword}
             onChange={e => setEmailForm(f => ({ ...f, currentPassword: e.target.value }))}
             className={inputClass}
@@ -335,19 +337,19 @@ export default function SettingsClient({ user }: Props) {
             disabled={emailLoading}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {emailLoading ? 'Updating…' : 'Update email'}
+            {emailLoading ? t('updating') : t('updateEmail')}
           </button>
         </form>
       </section>
 
       {/* Change password */}
       <section className="space-y-3">
-        <h2 className={sectionHeading}>Change Password</h2>
+        <h2 className={sectionHeading}>{t('changePassword')}</h2>
         <form onSubmit={handlePasswordSubmit} className="space-y-3">
           <input
             type="password"
             required
-            placeholder="Current password"
+            placeholder={t('currentPasswordLabel')}
             value={pwForm.currentPassword}
             onChange={e => setPwForm(f => ({ ...f, currentPassword: e.target.value }))}
             className={inputClass}
@@ -355,7 +357,7 @@ export default function SettingsClient({ user }: Props) {
           <input
             type="password"
             required
-            placeholder="New password (min. 8 characters)"
+            placeholder={t('newPassword')}
             value={pwForm.newPassword}
             onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
             className={inputClass}
@@ -363,7 +365,7 @@ export default function SettingsClient({ user }: Props) {
           <input
             type="password"
             required
-            placeholder="Confirm new password"
+            placeholder={t('confirmNewPassword')}
             value={pwForm.confirmPassword}
             onChange={e => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
             className={inputClass}
@@ -378,19 +380,19 @@ export default function SettingsClient({ user }: Props) {
             disabled={pwLoading}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {pwLoading ? 'Updating…' : 'Update password'}
+            {pwLoading ? t('updating') : t('updatePassword')}
           </button>
         </form>
       </section>
 
       {/* Account / sign out */}
       <section className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-8">
-        <h2 className={sectionHeading}>Account</h2>
+        <h2 className={sectionHeading}>{t('account')}</h2>
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           className="rounded-lg border border-red-300 dark:border-red-800 px-4 py-2 text-sm text-red-600 dark:text-red-400 font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
         >
-          Sign out
+          {t('signOut')}
         </button>
       </section>
     </main>

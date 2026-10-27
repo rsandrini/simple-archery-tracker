@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import type { SessionData, ArrowData, ScoreValue, EndData, ScoreInference } from '@/lib/domain/types'
 import { getConfig, getArrowDistance, getEndTargetVariant } from '@/lib/domain/rounds'
 import { getTargetDef } from '@/lib/domain/target'
@@ -13,6 +13,7 @@ import { RunningTotalDisplay } from '@/components/scoring/RunningTotalDisplay'
 import { EndProgressBar } from '@/components/session/EndProgressBar'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { hydrateSession } from '@/lib/sync/hydrate'
+import { Link, useRouter } from '@/i18n/navigation'
 
 interface Props {
   session: SessionData
@@ -31,6 +32,7 @@ function findInitialEndIndex(ends: EndData[], config: ReturnType<typeof getConfi
 }
 
 export function MarkingScreenClient({ session }: Props) {
+  const t = useTranslations('Marking')
   const router = useRouter()
   const config = getConfig(session.modality)
 
@@ -115,7 +117,7 @@ export function MarkingScreenClient({ session }: Props) {
         }) as { arrow: ArrowData; updatedArrows: ArrowData[] }
 
         if (result.updatedArrows.length > 0) {
-          addToast(`Double hit on spot ${result.updatedArrows[0]?.spotIndex ?? ''}! Lower score counted.`)
+          addToast(t('doubleHit', { spot: result.updatedArrows[0]?.spotIndex ?? '' }))
         }
 
         setEnds(prev => {
@@ -147,13 +149,13 @@ export function MarkingScreenClient({ session }: Props) {
           }
         }
       } catch {
-        addToast('Failed to save arrow — please try again')
+        addToast(t('saveError'))
       } finally {
         savingRef.current = false
         setSaving(false)
       }
     },
-    [currentEnd, currentArrows, currentEndIndex, config, session.id, router]
+    [currentEnd, currentArrows, currentEndIndex, config, session.id, router, t]
   )
 
   const handleUndo = useCallback(async () => {
@@ -172,11 +174,11 @@ export function MarkingScreenClient({ session }: Props) {
       ))
       if (targetEndIndex !== currentEndIndex) setCurrentEndIndex(targetEndIndex)
     } catch {
-      addToast('Failed to undo — please try again')
+      addToast(t('undoError'))
     } finally {
       setUndoing(false)
     }
-  }, [currentArrows, currentEndIndex, prevEnd, undoing])
+  }, [currentArrows, currentEndIndex, prevEnd, undoing, t])
 
   const handleScoreOverride = useCallback(
     async (arrowId: string, score: ScoreValue) => {
@@ -193,10 +195,10 @@ export function MarkingScreenClient({ session }: Props) {
           }))
         )
       } catch {
-        addToast('Failed to update score — please try again')
+        addToast(t('updateError'))
       }
     },
-    []
+    [t]
   )
 
   useEffect(() => {
@@ -214,15 +216,15 @@ export function MarkingScreenClient({ session }: Props) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
-        <a href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">← Sessions</a>
+        <Link href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">{t('back')}</Link>
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {session.modality === 'INDOOR' ? 'Indoor Round' : 'Flint Round'}
+          {session.modality === 'INDOOR' ? t('indoor') : t('flint')}
         </span>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <a href={`/sessions/${session.id}/summary`} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
-            Summary
-          </a>
+          <Link href={`/sessions/${session.id}/summary`} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+            {t('summary')}
+          </Link>
         </div>
       </header>
 
@@ -258,7 +260,7 @@ export function MarkingScreenClient({ session }: Props) {
                     ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
                     : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
                 }`}
-                aria-label={scrollMode ? 'Switch to aim mode' : 'Switch to scroll mode'}
+                aria-label={scrollMode ? t('aim') : t('scroll')}
                 aria-pressed={scrollMode}
               >
                 {scrollMode ? (
@@ -266,7 +268,7 @@ export function MarkingScreenClient({ session }: Props) {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 5v14M5 12l7-7 7 7" />
                     </svg>
-                    Scroll
+                    {t('scroll')}
                   </>
                 ) : (
                   <>
@@ -274,7 +276,7 @@ export function MarkingScreenClient({ session }: Props) {
                       <circle cx="12" cy="12" r="3" />
                       <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
                     </svg>
-                    Aim
+                    {t('aim')}
                   </>
                 )}
               </button>
@@ -288,7 +290,7 @@ export function MarkingScreenClient({ session }: Props) {
                 <path d="M9 14L4 9l5-5" />
                 <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
               </svg>
-              {undoing ? 'Undoing…' : 'Undo last arrow'}
+              {undoing ? t('undoing') : t('undo')}
             </button>
           </div>
 
@@ -313,9 +315,9 @@ export function MarkingScreenClient({ session }: Props) {
 
       {/* Toast notifications */}
       <div className="fixed bottom-4 right-4 space-y-2 z-50">
-        {toasts.map(t => (
-          <div key={t.id} className="bg-orange-600 text-white text-sm rounded-lg px-4 py-2 shadow-lg">
-            {t.message}
+        {toasts.map(tItem => (
+          <div key={tItem.id} className="bg-orange-600 text-white text-sm rounded-lg px-4 py-2 shadow-lg">
+            {tItem.message}
           </div>
         ))}
       </div>

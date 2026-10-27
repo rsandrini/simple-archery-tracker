@@ -1,7 +1,14 @@
 import { auth, signOut } from '@/lib/auth'
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
+import { LocaleSwitcher } from './LocaleSwitcher'
 
-export default async function UserHeader() {
+interface Props {
+  locale: string
+}
+
+export default async function UserHeader({ locale }: Props) {
+  const t = await getTranslations({ locale, namespace: 'UserHeader' })
   const session = await auth()
   if (!session?.user) return null
 
@@ -11,24 +18,26 @@ export default async function UserHeader() {
         {session.user.name ?? session.user.email}
       </span>
       <div className="flex items-center gap-3">
+        <LocaleSwitcher />
         <Link
           href="/settings"
+          locale={locale}
           className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 min-w-[40px] min-h-[40px] flex items-center"
-          title="Settings"
+          title={t('settings')}
         >
           ⚙
         </Link>
         <form
           action={async () => {
             'use server'
-            await signOut({ redirectTo: '/login' })
+            await signOut({ redirectTo: `/${locale}/login` })
           }}
         >
           <button
             type="submit"
             className="text-sm text-red-600 dark:text-red-400 hover:underline min-w-[40px] min-h-[40px] flex items-center"
           >
-            Sign out
+            {t('signOut')}
           </button>
         </form>
       </div>

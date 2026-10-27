@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import {
   RadarChart, PolarGrid, PolarAngleAxis,
   Radar, ResponsiveContainer, Tooltip,
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function ClockChart({ distribution }: Props) {
+  const t = useTranslations('ClockChart')
   const data = SECTOR_ORDER.map(s => ({ sector: s, count: distribution[s] }))
   const centerCount = distribution['center']
   const total = Object.values(distribution).reduce((s, n) => s + n, 0)
@@ -20,14 +22,14 @@ export function ClockChart({ distribution }: Props) {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Clock distribution</h3>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">Where arrows land on the clock face</p>
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">{t('title')}</h3>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">{t('description')}</p>
       <ResponsiveContainer width="100%" height={220}>
         <RadarChart data={data} outerRadius="75%">
           <PolarGrid />
           <PolarAngleAxis dataKey="sector" tick={{ fontSize: 11 }} />
           <Radar
-            name="Arrows"
+            name={t('arrows')}
             dataKey="count"
             stroke="#3b82f6"
             fill="#3b82f6"
@@ -35,13 +37,13 @@ export function ClockChart({ distribution }: Props) {
           />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            formatter={(v) => [v ?? 0, 'arrows']}
+            formatter={(v) => [v ?? 0, t('arrows')]}
           />
         </RadarChart>
       </ResponsiveContainer>
       {centerCount > 0 && (
         <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-1">
-          <span className="font-semibold text-green-600 dark:text-green-400">{centerCount}</span> arrow{centerCount !== 1 ? 's' : ''} in center
+          {t.rich('center', { count: centerCount })}
         </p>
       )}
     </div>

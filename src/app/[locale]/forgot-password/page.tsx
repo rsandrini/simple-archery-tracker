@@ -1,8 +1,10 @@
 'use client'
 import { useState } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('ForgotPassword')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -20,7 +22,7 @@ export default function ForgotPasswordPage() {
       })
       setSubmitted(true)
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('error'))
     } finally {
       setLoading(false)
     }
@@ -30,26 +32,26 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-sm space-y-6">
         <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
-          Reset your password
+          {t('title')}
         </h1>
 
         {submitted ? (
           <div className="space-y-4 text-center">
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              If an account exists for <strong>{email}</strong>, you'll receive a reset link shortly.
+              {t.rich('submitted', { emailValue: email, email: (chunks) => <strong>{chunks}</strong> })}
             </p>
             <Link href="/login" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
-              Back to sign in
+              {t('backToSignIn')}
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Enter your email and we'll send you a link to reset your password.
+              {t('description')}
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Email
+                {t('email')}
               </label>
               <input
                 type="email"
@@ -65,11 +67,11 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              {loading ? 'Sending…' : 'Send reset link'}
+              {loading ? t('sending') : t('send')}
             </button>
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               <Link href="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
-                Back to sign in
+                {t('backToSignIn')}
               </Link>
             </p>
           </form>

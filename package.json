@@ -1,6 +1,6 @@
 {
   "name": "arquearia-scaffold",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "prisma generate && next dev",
@@ -19,6 +19,7 @@
     "dexie": "^4.4.4",
     "next": "^15.0.0",
     "next-auth": "beta",
+    "next-intl": "^4.14.9",
     "nodemailer": "^7.0.13",
     "pino": "^10.3.1",
     "prisma": "^7.8.0",

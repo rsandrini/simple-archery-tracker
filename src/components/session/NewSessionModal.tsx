@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { api } from '@/lib/api/client'
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function NewSessionModal({ open, onClose }: Props) {
+  const t = useTranslations('NewSessionModal')
   const router = useRouter()
   const [modality, setModality] = useState<Modality>('INDOOR')
   const [targetVariant, setTargetVariant] = useState<TargetVariant>('1-SPOT')
@@ -35,10 +37,10 @@ export function NewSessionModal({ open, onClose }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="New Training Session">
+    <Modal open={open} onClose={onClose} title={t('title')}>
       <div className="space-y-5">
         <fieldset>
-          <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Modality</legend>
+          <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('modality')}</legend>
           <div className="grid grid-cols-2 gap-2">
             {(['INDOOR', 'FLINT'] as Modality[]).map(m => (
               <label
@@ -51,10 +53,10 @@ export function NewSessionModal({ open, onClose }: Props) {
               >
                 <input type="radio" className="sr-only" value={m} checked={modality === m} onChange={() => setModality(m)} />
                 <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
-                  {m === 'INDOOR' ? 'Indoor Round' : 'Flint Round'}
+                  {m === 'INDOOR' ? t('indoor') : t('flint')}
                 </span>
                 <span className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                  {m === 'INDOOR' ? '12 ends · 5 arrows' : '7 ends · 4 arrows'}
+                  {m === 'INDOOR' ? t('indoorDetail') : t('flintDetail')}
                 </span>
               </label>
             ))}
@@ -63,7 +65,7 @@ export function NewSessionModal({ open, onClose }: Props) {
 
         {modality === 'INDOOR' && (
           <fieldset>
-            <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Target face</legend>
+            <legend className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('targetFace')}</legend>
             <div className="grid grid-cols-2 gap-2">
               {(['1-SPOT', '5-SPOT'] as TargetVariant[]).map(v => (
                 <label
@@ -82,10 +84,10 @@ export function NewSessionModal({ open, onClose }: Props) {
                     onChange={() => setTargetVariant(v)}
                   />
                   <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
-                    {v === '1-SPOT' ? '1 spot' : '5 spot'}
+                    {v === '1-SPOT' ? t('1spot') : t('5spot')}
                   </span>
                   <span className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                    {v === '1-SPOT' ? 'Single large face' : 'Quincunx layout'}
+                    {v === '1-SPOT' ? t('1spotDetail') : t('5spotDetail')}
                   </span>
                 </label>
               ))}
@@ -95,14 +97,14 @@ export function NewSessionModal({ open, onClose }: Props) {
 
         {modality === 'FLINT' && (
           <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-            Flint target face is auto-selected per end: 1-spot at long distances, 4-spot at 20ft / 20yd / 10yd.
+            {t('flintHint')}
           </p>
         )}
 
         <div className="flex justify-end gap-2 pt-1">
-          <Button variant="secondary" onClick={onClose} disabled={isPending}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose} disabled={isPending}>{t('cancel')}</Button>
           <Button onClick={handleSubmit} disabled={isPending}>
-            {isPending ? 'Creating…' : 'Start session'}
+            {isPending ? t('creating') : t('start')}
           </Button>
         </div>
       </div>
