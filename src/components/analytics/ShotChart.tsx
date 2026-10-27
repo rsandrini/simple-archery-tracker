@@ -4,7 +4,8 @@ import { useTranslations } from 'next-intl'
 import { ArrowDot } from '@/components/target/ArrowDot'
 import { TargetRings } from '@/components/target/TargetRings'
 import { getTargetDef, SVG_SIZE } from '@/lib/domain/target'
-import { dispersionEllipse } from '@/lib/domain/analytics'
+import { dispersionEllipse, groupingQuality } from '@/lib/domain/analytics'
+import type { GroupingTier } from '@/lib/domain/analytics'
 import type { ArrowData, ScoreValue, SessionData, TargetDef } from '@/lib/domain/types'
 
 const SCORE_COLORS: Record<ScoreValue, string> = {
@@ -21,6 +22,7 @@ function groupStats(arrows: ArrowData[], spotCx: number, spotCy: number) {
   const meanSpread = dists.reduce((s, d) => s + d, 0) / (dists.length || 1)
   return { cx, cy, meanSpread, offset: Math.hypot(cx - spotCx, cy - spotCy) }
 }
+
 
 function Crosshair({ x, y, arm = 5, w = 0.8 }: { x: number; y: number; arm?: number; w?: number }) {
   return (
@@ -157,11 +159,14 @@ function PerSpotView({
 }
 
 function qualityInfo(t: ReturnType<typeof useTranslations>, meanSpread: number, refRadius: number) {
-  const p = meanSpread / refRadius
-  if (p < 0.12) return { label: t('tight'),    cls: 'text-green-600 dark:text-green-400' }
-  if (p < 0.28) return { label: t('good'),     cls: 'text-blue-600 dark:text-blue-400' }
-  if (p < 0.50) return { label: t('moderate'), cls: 'text-yellow-600 dark:text-yellow-400' }
-  return           { label: t('spread'),    cls: 'text-red-500 dark:text-red-400' }
+  const tier = groupingQuality(meanSpread / refRadius)
+  const styles: Record<GroupingTier, string> = {
+    tight: 'text-green-600 dark:text-green-400',
+    good: 'text-blue-600 dark:text-blue-400',
+    moderate: 'text-yellow-600 dark:text-yellow-400',
+    spread: 'text-red-500 dark:text-red-400',
+  }
+  return { label: t(tier), cls: styles[tier] }
 }
 
 function aimDirection(t: ReturnType<typeof useTranslations>, cx: number, cy: number, spotCx = 100, spotCy = 100): string {

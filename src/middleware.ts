@@ -8,7 +8,11 @@ const handleI18nRouting = createMiddleware(routing)
 const { auth } = NextAuth(authConfig)
 
 const PUBLIC_PATHS = new Set(['/'])
-const PUBLIC_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password', '/api/auth', '/api/users', '/images']
+const PUBLIC_PREFIXES = [
+  '/login', '/register', '/forgot-password', '/reset-password',
+  '/api/auth', '/api/users', '/images',
+  '/manifest.json', '/sw.js', '/icons', '/ingest',
+]
 const LOCALIZED_PUBLIC_PATHS = new Set(routing.locales.map((locale) => `/${locale}`))
 const LOCALIZED_PUBLIC_PREFIXES = routing.locales.flatMap((locale) =>
   PUBLIC_PREFIXES.map((prefix) => `/${locale}${prefix}`)
@@ -31,10 +35,8 @@ function getLocaleFromPathname(pathname: string): string {
 }
 
 export default auth((req) => {
-  // Let next-intl handle locale routing first
   const response = handleI18nRouting(req)
 
-  // If next-intl issued a redirect, return it as-is
   if (response.status >= 300 && response.status < 400) {
     return response
   }

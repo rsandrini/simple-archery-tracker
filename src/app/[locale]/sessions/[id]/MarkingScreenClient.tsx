@@ -7,6 +7,7 @@ import { getConfig, getArrowDistance, getEndTargetVariant } from '@/lib/domain/r
 import { getTargetDef } from '@/lib/domain/target'
 import { runningTotals, endTotal, scoreToPoints, isX } from '@/lib/domain/scoring'
 import { offlineApi as api } from '@/lib/sync/offline-api'
+import { analytics } from '@/lib/monitoring/posthog-client'
 import { ArcheryTarget } from '@/components/target/ArcheryTarget'
 import { EndScoreTable } from '@/components/scoring/EndScoreTable'
 import { RunningTotalDisplay } from '@/components/scoring/RunningTotalDisplay'
@@ -83,6 +84,12 @@ export function MarkingScreenClient({ session }: Props) {
   const isSessionComplete =
     ends.filter(e => e.arrows.length === config.arrowsPerEnd).length >= config.totalEnds
 
+  // The session's very last arrow saves and immediately navigates to Summary,
+  // which has no way back to fix the arrow's position — require an explicit
+  // confirm step for that one arrow instead of the usual instant-save.
+  const isSessionFinalArrow =
+    currentEndIndex + 1 >= config.totalEnds && currentArrowIndex + 1 >= config.arrowsPerEnd
+
   function addToast(message: string) {
     const id = ++toastCounter.current
     setToasts(prev => [...prev, { id, message }])
@@ -118,6 +125,7 @@ export function MarkingScreenClient({ session }: Props) {
 
         if (result.updatedArrows.length > 0) {
           addToast(t('doubleHit', { spot: result.updatedArrows[0]?.spotIndex ?? '' }))
+          analytics.capture('double_hit_triggered', { modality: session.modality })
         }
 
         setEnds(prev => {
@@ -142,7 +150,12 @@ export function MarkingScreenClient({ session }: Props) {
 
         const newArrowCount = currentArrows.length + 1
         if (newArrowCount >= config.arrowsPerEnd) {
+          analytics.capture('end_completed', { modality: session.modality, endIndex: currentEndIndex })
           if (currentEndIndex + 1 >= config.totalEnds) {
+            analytics.capture('session_finished', {
+              modality: session.modality,
+              totalArrows: config.totalEnds * config.arrowsPerEnd,
+            })
             router.push(`/sessions/${session.id}/summary`)
           } else {
             setCurrentEndIndex(prev => prev + 1)
@@ -167,6 +180,7 @@ export function MarkingScreenClient({ session }: Props) {
     setUndoing(true)
     try {
       await api.arrows.delete(lastArrow.id)
+      analytics.capture('undo_used')
       setEnds(prev => prev.map(e =>
         e.index === targetEndIndex
           ? { ...e, arrows: e.arrows.filter(a => a.id !== lastArrow.id) }
@@ -251,10 +265,14 @@ export function MarkingScreenClient({ session }: Props) {
               disabled={saving}
               arrowScale={arrowScale}
               scrollMode={scrollMode}
+              requireConfirmation={isSessionFinalArrow}
             />
             <div className="w-full max-w-sm flex justify-end">
               <button
-                onClick={() => setScrollMode(v => !v)}
+                onClick={() => {
+                  analytics.capture('settings_changed', { field: 'scrollAimMode' })
+                  setScrollMode(v => !v)
+                }}
                 className={`flex items-center gap-1.5 px-3 py-2 min-h-[40px] min-w-[40px] rounded-lg text-xs font-medium transition-colors ${
                   scrollMode
                     ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'

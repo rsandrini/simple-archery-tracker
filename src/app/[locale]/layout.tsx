@@ -6,7 +6,10 @@ import { SessionProvider } from 'next-auth/react'
 import { ThemeProvider } from '@/lib/context/ThemeContext'
 import UserHeader from '@/components/ui/UserHeader'
 import { SyncBanner } from '@/components/ui/SyncBanner'
+import { PostHogProvider } from '@/components/monitoring/PostHogProvider'
+import { PageviewTracker } from '@/components/monitoring/PageviewTracker'
 import { routing } from '@/i18n/routing'
+import { Suspense } from 'react'
 import enMessages from '../../../messages/en.json'
 import ptBRMessages from '../../../messages/pt-BR.json'
 
@@ -35,10 +38,15 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <NextIntlClientProvider messages={messagesByLocale[locale]} locale={locale} timeZone="UTC">
       <SessionProvider>
-        <ThemeProvider>
-          <UserHeader locale={locale} />
-          {children}
-        </ThemeProvider>
+        <PostHogProvider>
+          <Suspense fallback={null}>
+            <PageviewTracker />
+          </Suspense>
+          <ThemeProvider>
+            <UserHeader locale={locale} />
+            {children}
+          </ThemeProvider>
+        </PostHogProvider>
       </SessionProvider>
       <SyncBanner />
     </NextIntlClientProvider>

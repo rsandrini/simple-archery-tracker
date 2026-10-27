@@ -215,6 +215,7 @@
     "title": "Evolução",
     "score": "Pontuação",
     "group": "Grupo",
+    "groupHint": "% menor = agrupamento mais apertado (dispersão como % do tamanho do alvo)",
     "indoor": "Indoor",
     "flint": "Flint"
   },
@@ -308,7 +309,11 @@
     "saveError": "Falha ao salvar flecha — tente novamente",
     "undoError": "Falha ao desfazer — tente novamente",
     "updateError": "Falha ao atualizar pontuação — tente novamente",
-    "releaseToPlace": "Solte para posicionar a flecha"
+    "releaseToPlace": "Solte para posicionar a flecha",
+    "lastArrowConfirm": "Última flecha da sessão — confirme para salvar",
+    "redo": "Refazer",
+    "confirm": "Confirmar",
+    "confirmWithScore": "Confirmar ({score})"
   },
   "Modal": {
     "close": "Fechar"

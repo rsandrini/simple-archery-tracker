@@ -215,6 +215,7 @@
     "title": "Progression",
     "score": "Score",
     "group": "Group",
+    "groupHint": "Lower % = tighter grouping (spread as % of target size)",
     "indoor": "Indoor",
     "flint": "Flint"
   },
@@ -308,7 +309,11 @@
     "saveError": "Failed to save arrow — please try again",
     "undoError": "Failed to undo — please try again",
     "updateError": "Failed to update score — please try again",
-    "releaseToPlace": "Release to place arrow"
+    "releaseToPlace": "Release to place arrow",
+    "lastArrowConfirm": "Last arrow of the session — confirm to save",
+    "redo": "Redo",
+    "confirm": "Confirm",
+    "confirmWithScore": "Confirm ({score})"
   },
   "Modal": {
     "close": "Close"

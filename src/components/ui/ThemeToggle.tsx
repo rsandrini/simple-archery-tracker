@@ -1,12 +1,16 @@
 'use client'
 
 import { useTheme } from '@/lib/context/ThemeContext'
+import { analytics } from '@/lib/monitoring/posthog-client'
 
 export function ThemeToggle() {
   const { theme, toggle } = useTheme()
   return (
     <button
-      onClick={toggle}
+      onClick={() => {
+        analytics.capture('settings_changed', { field: 'theme' })
+        toggle()
+      }}
       title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       className="w-10 h-10 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors"
     >

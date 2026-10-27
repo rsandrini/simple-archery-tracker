@@ -12,9 +12,11 @@ interface Props {
   createdAt: string
   endCount: number
   rating?: number | null
+  totalPoints: number
+  maxPoints: number
 }
 
-export function SessionCard({ id, modality, targetVariant, createdAt, endCount, rating }: Props) {
+export function SessionCard({ id, modality, targetVariant, createdAt, endCount, rating, totalPoints, maxPoints }: Props) {
   const t = useTranslations('SessionCard')
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
@@ -86,6 +88,11 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
           <div>
             <p className="font-semibold text-gray-900 dark:text-gray-100">{modalityLabel[modality] ?? modality}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{formatted}</p>
+            {totalPoints > 0 && (
+              <p className="text-xs mt-1 font-medium text-gray-600 dark:text-gray-400 tabular-nums">
+                {totalPoints} / {maxPoints} pts
+              </p>
+            )}
             {rating != null && (
               <p className="text-xs mt-1 text-yellow-500">
                 {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
@@ -93,9 +100,13 @@ export function SessionCard({ id, modality, targetVariant, createdAt, endCount, 
             )}
           </div>
           <div className="flex flex-col items-end gap-1 pr-6">
-            <span className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full px-2 py-0.5 font-medium">
-              {variantLabel[targetVariant] ?? targetVariant}
-            </span>
+            {/* Flint always mixes 1-spot/4-spot targets per end — targetVariant isn't a
+                real per-session choice there, so the badge is only meaningful for Indoor. */}
+            {modality === 'INDOOR' && (
+              <span className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full px-2 py-0.5 font-medium">
+                {variantLabel[targetVariant] ?? targetVariant}
+              </span>
+            )}
             <span className={`text-xs rounded-full px-2 py-0.5 font-medium ${
               isComplete
                 ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'

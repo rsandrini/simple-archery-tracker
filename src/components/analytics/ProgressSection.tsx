@@ -10,7 +10,7 @@ interface SessionRow {
   total: number
   totalX: number
   bestEnd: number
-  meanSpread: number
+  groupTightness: number
   consistency: number
 }
 
@@ -26,7 +26,7 @@ async function PRCard({ label, entry, unit, locale }: { label: string; entry: PR
     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
       <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{label}</p>
       <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-        {unit === 'radius' ? entry.value.toFixed(1) : entry.value}
+        {unit === 'percent' ? `${(entry.value * 100).toFixed(1)}%` : entry.value}
       </p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{date}</p>
     </div>
@@ -70,7 +70,7 @@ export async function ProgressSection({ sessions, locale }: Props) {
           <PRCard label={t('bestIndoor')} entry={pr.bestScoreIndoor} locale={locale} />
           <PRCard label={t('bestFlint')} entry={pr.bestScoreFlint} locale={locale} />
           <PRCard label={t('bestEnd')} entry={pr.bestEnd} locale={locale} />
-          <PRCard label={t('tightestGroup')} entry={pr.tightestGroup} unit="radius" locale={locale} />
+          <PRCard label={t('tightestGroup')} entry={pr.tightestGroup} unit="percent" locale={locale} />
         </div>
         <div className="mt-3">
           <PRCard label={t('mostX')} entry={pr.mostX} locale={locale} />

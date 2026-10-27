@@ -106,3 +106,34 @@ describe('inferScoreFromCoords — Flint 4-spot', () => {
     expect(r.spotIndex).toBeNull()
   })
 })
+
+// Regression: the live-preview badge in ZoomOverlay must score with the same
+// arrowRadius as the final placement in ArcheryTarget's endDrag, i.e. no
+// override. A halved radius (a bug fixed in this commit) shrinks edgeDistance
+// less, which is *stricter* near a ring boundary — showing a lower score
+// (or M) while dragging than what actually gets saved on release.
+describe('inferScoreFromCoords — no-override arrowRadius matches full radius', () => {
+  it('a point 32 units from Indoor 1-spot center scores 4 with the default (full) radius', () => {
+    const x = SVG_CENTER + 32
+    const r = inferScoreFromCoords(x, SVG_CENTER, 'INDOOR', '1-SPOT')
+    expect(r.score).toBe('4')
+  })
+
+  it('the same point would score 3 (wrong) if scored with a halved radius override', () => {
+    const x = SVG_CENTER + 32
+    const r = inferScoreFromCoords(x, SVG_CENTER, 'INDOOR', '1-SPOT', ARROW_DOT_RADIUS / 2)
+    expect(r.score).toBe('3')
+  })
+
+  it('a point 82 units from Flint 1-spot center scores 3 with the default (full) radius', () => {
+    const x = SVG_CENTER + 82
+    const r = inferScoreFromCoords(x, SVG_CENTER, 'FLINT', '1-SPOT')
+    expect(r.score).toBe('3')
+  })
+
+  it('the same point would score M (wrong) if scored with a halved radius override', () => {
+    const x = SVG_CENTER + 82
+    const r = inferScoreFromCoords(x, SVG_CENTER, 'FLINT', '1-SPOT', ARROW_DOT_RADIUS / 2)
+    expect(r.score).toBe('M')
+  })
+})

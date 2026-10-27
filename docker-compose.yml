@@ -1,6 +1,14 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        SENTRY_ORG: "${SENTRY_ORG}"
+        SENTRY_PROJECT: "${SENTRY_PROJECT}"
+        SENTRY_AUTH_TOKEN: "${SENTRY_AUTH_TOKEN}"
+        NEXT_PUBLIC_SENTRY_DSN: "${SENTRY_DSN}"
+        NEXT_PUBLIC_POSTHOG_KEY: "${NEXT_PUBLIC_POSTHOG_KEY}"
+        NEXT_PUBLIC_POSTHOG_HOST: "${NEXT_PUBLIC_POSTHOG_HOST}"
     ports:
       - "3001:3000"     # host port 3001 → container port 3000; cloudflared talks to app internally
     environment:
